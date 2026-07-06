@@ -7,19 +7,11 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root{
-      --bg1:#f5f8ff;
-      --bg2:#eef4ff;
-      --panel:rgba(255,255,255,.92);
-      --panel-strong:#ffffff;
-      --text:#0f172a;
-      --muted:#64748b;
-      --line:#dbe5f1;
-      --brand:#1d4ed8;
-      --brand2:#7c3aed;
-      --good:#16a34a;
-      --warn:#f59e0b;
-      --shadow:0 18px 45px rgba(15,23,42,.08);
-      --radius:24px;
+      --bg1:#f6f9ff; --bg2:#eef4ff;
+      --panel:rgba(255,255,255,.94);
+      --text:#0f172a; --muted:#64748b; --line:#dbe5f1;
+      --brand:#1d4ed8; --brand2:#7c3aed; --good:#16a34a;
+      --shadow:0 18px 45px rgba(15,23,42,.08); --radius:24px;
     }
     *{box-sizing:border-box}
     html,body{margin:0;padding:0}
@@ -28,286 +20,271 @@
       font-family:Inter,ui-sans-serif,system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
       color:var(--text);
       background:
-        radial-gradient(circle at top left, rgba(59,130,246,.12), transparent 26%),
+        radial-gradient(circle at top left, rgba(59,130,246,.10), transparent 25%),
         radial-gradient(circle at top right, rgba(124,58,237,.10), transparent 28%),
-        linear-gradient(135deg, var(--bg1), #f8fbff 45%, #f5f8ff);
+        linear-gradient(135deg, var(--bg1), #fbfdff 50%, #f5f8ff);
     }
-    .app{max-width:1440px;margin:0 auto;display:grid;grid-template-columns:280px 1fr;min-height:100vh}
-    .sidebar{
-      position:sticky;top:0;height:100vh;
-      padding:22px 18px;
-      background:linear-gradient(180deg,#081f42 0%, #0b2c5f 100%);
-      color:#fff;
-      box-shadow:inset -1px 0 0 rgba(255,255,255,.06);
-      display:flex;flex-direction:column;gap:16px;
+    .wrap{max-width:1240px;margin:0 auto;padding:22px 18px 28px}
+    .hero{
+      border-radius:32px;padding:28px;background:linear-gradient(135deg,#0b2b5a 0%,#123b7d 50%,#4f46e5 100%);
+      color:#fff;box-shadow:0 18px 45px rgba(15,23,42,.14);position:relative;overflow:hidden
     }
-    .brand{display:flex;gap:12px;align-items:center;padding:4px 4px 10px}
-    .logo{
-      width:46px;height:46px;border-radius:18px;
-      display:grid;place-items:center;
-      background:rgba(255,255,255,.12);
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
-      font-size:22px;
+    .hero:before{
+      content:"";position:absolute;inset:auto -40px -50px auto;width:220px;height:220px;border-radius:50%;
+      background:rgba(255,255,255,.08);filter:blur(10px)
     }
-    .brand h1{margin:0;font-size:20px;line-height:1.1}
-    .brand p{margin:4px 0 0;font-size:12px;opacity:.72}
-    .side-card{
-      border-radius:22px;
-      padding:18px;
-      background:rgba(255,255,255,.08);
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
-    }
-    .side-card .small{font-size:12px;opacity:.72}
-    .side-card .big{font-size:30px;font-weight:800;margin-top:6px;line-height:1}
-    .side-card .row{display:flex;justify-content:space-between;gap:10px;font-size:12px;opacity:.78;margin-top:14px}
-    .xpbar{height:8px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:8px}
-    .xpbar > div{height:100%;width:0;background:linear-gradient(90deg,#22c55e,#38bdf8);border-radius:999px}
-    .nav{display:flex;flex-direction:column;gap:8px;flex:1}
-    .nav button{
-      border:0;cursor:pointer;background:transparent;color:rgba(255,255,255,.80);
-      padding:14px 14px;border-radius:18px;display:flex;align-items:center;gap:12px;
-      text-align:left;font-size:14px;font-weight:600;transition:.2s ease
-    }
-    .nav button:hover,.nav button.active{background:rgba(255,255,255,.12);color:#fff}
-    .quote{
-      margin-top:auto;border-radius:22px;padding:16px 18px;
-      background:rgba(255,255,255,.06);
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
-      font-size:13px;line-height:1.6;opacity:.92
-    }
-    .main{min-width:0}
-    .topbar{
-      position:sticky;top:0;z-index:20;
-      backdrop-filter:blur(20px);
-      background:rgba(246,249,253,.84);
-      border-bottom:1px solid rgba(219,229,241,.9);
-    }
-    .topbar-inner{padding:18px 26px;display:flex;align-items:center;gap:16px}
-    .menu{display:none;border:1px solid var(--line);background:#fff;border-radius:14px;padding:10px 12px;cursor:pointer}
-    .welcome{flex:1}
-    .welcome h2{margin:0;font-size:20px}
-    .welcome p{margin:4px 0 0;color:var(--muted);font-size:13px}
-    .search{
-      flex:0 1 460px;display:flex;align-items:center;gap:10px;border:1px solid var(--line);
-      background:#fff;border-radius:18px;padding:12px 14px;box-shadow:0 3px 16px rgba(15,23,42,.04)
-    }
-    .search input{border:0;outline:none;background:transparent;width:100%;font-size:14px}
-    .user{
-      display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);
-      background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(15,23,42,.04)
-    }
-    .avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:grid;place-items:center;color:#fff;font-weight:800}
-    .u-name{font-size:13px;font-weight:700}
-    .u-role{font-size:12px;color:var(--muted)}
-    .mobile-search{display:none;padding:0 16px 14px}
-    .content{padding:22px 26px 28px}
-    .grid-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px}
-    .card{
-      background:var(--panel);
-      border:1px solid rgba(219,229,241,.88);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      overflow:hidden;
-    }
-    .stat{padding:18px}
-    .stat .row{display:flex;justify-content:space-between;gap:10px}
-    .stat .k{font-size:13px;color:var(--muted)}
-    .stat .v{font-size:30px;font-weight:800;line-height:1.1;margin-top:10px}
-    .section-grid{display:grid;grid-template-columns:1.2fr .9fr;gap:18px;margin-bottom:18px}
-    .two-col{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;margin-bottom:18px}
-    .card-h{padding:20px 20px 0}
-    .card-h h3{margin:0;font-size:20px}
-    .card-h p{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.55}
-    .card-b{padding:18px 20px 20px}
-    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+    .hero h1{margin:0;font-size:30px;line-height:1.15}
+    .hero p{margin:10px 0 0;max-width:860px;color:rgba(255,255,255,.82);line-height:1.7}
+    .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
     .chip{
-      display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#f8fbff;
-      border-radius:999px;padding:8px 12px;font-size:12px;color:#3b4a7a
+      display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.09);color:#fff;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:600
     }
+    .grid-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:18px}
+    .card{background:var(--panel);border:1px solid rgba(219,229,241,.86);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .stat{padding:18px}
+    .stat .k{font-size:13px;color:var(--muted)}
+    .stat .v{margin-top:10px;font-size:30px;font-weight:800;line-height:1}
+    .stat .sub{margin-top:8px;font-size:12px;color:var(--muted)}
+    .section{margin-top:18px}
+    .section-h{
+      padding:18px 20px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap
+    }
+    .section-h h2{margin:0;font-size:20px}
+    .section-h p{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.6;max-width:900px}
+    .section-b{padding:18px 20px 20px}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .btn{
-      border:0;cursor:pointer;font:inherit;border-radius:16px;padding:12px 16px;font-weight:700;transition:.18s ease
+      border:0;cursor:pointer;font:inherit;font-weight:700;padding:12px 16px;border-radius:16px;transition:.18s ease
     }
     .btn:hover{transform:translateY(-1px)}
     .btn.primary{background:linear-gradient(90deg,var(--brand),var(--brand2));color:#fff}
     .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--text)}
     .btn.soft{background:#eef4ff;border:1px solid #d5e2ff;color:#1d4ed8}
     .btn.good{background:#ecfdf5;border:1px solid #bbf7d0;color:#166534}
-    .btn.warn{background:#fff7ed;border:1px solid #fed7aa;color:#b45309}
     .btn.small{padding:10px 12px;border-radius:14px;font-size:13px}
-    .progress-wrap{height:10px;background:#edf3fb;border-radius:999px;overflow:hidden}
-    .progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
-    .task-list{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+    .chip2{
+      display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#f8fbff;color:#3b4a7a;
+      border-radius:999px;padding:8px 12px;font-size:12px
+    }
+    .tasks{display:flex;flex-direction:column;gap:10px}
     .task{
-      display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 14px;border-radius:18px;border:1px solid var(--line);
-      cursor:pointer;background:#fff;transition:.18s ease
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      padding:14px 14px;border-radius:18px;border:1px solid var(--line);background:#fff;cursor:pointer;transition:.18s ease;
     }
     .task:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(15,23,42,.06)}
-    .task.locked{cursor:default;opacity:.95}
-    .task.active{background:#eff6ff;border-color:#bfdbfe}
-    .task .left{display:flex;align-items:flex-start;gap:12px;min-width:0}
+    .task.completed{background:#eff6ff;border-color:#bfdbfe}
+    .task.locked{cursor:default;opacity:.96}
+    .task-left{display:flex;align-items:flex-start;gap:12px;min-width:0}
     .check{
       width:22px;height:22px;border-radius:999px;border:2px solid #cbd5e1;display:grid;place-items:center;flex:none;background:#fff;color:#fff;font-size:13px
     }
-    .task.active .check{background:#2563eb;border-color:#2563eb}
-    .task .title{font-weight:700}
-    .task .meta{font-size:12px;color:var(--muted);margin-top:3px}
+    .task.completed .check{background:#2563eb;border-color:#2563eb}
+    .task-title{font-weight:700}
+    .task-meta{font-size:12px;color:var(--muted);margin-top:3px}
     .badge{
       padding:6px 10px;border-radius:999px;font-size:12px;border:1px solid var(--line);background:#f8fafc;color:#475569;white-space:nowrap
     }
     .badge.good{background:#ecfdf5;border-color:#bbf7d0;color:#166534}
     .badge.blue{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
-    .badge.orange{background:#fff7ed;border-color:#fed7aa;color:#c2410c}
-    .badge.purple{background:#f5f3ff;border-color:#ddd6fe;color:#6d28d9}
     .mini-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-    .mini{
-      border:1px solid var(--line);border-radius:18px;padding:15px;background:linear-gradient(180deg,#fff,#fbfdff)
-    }
+    .mini{border:1px solid var(--line);border-radius:18px;padding:15px;background:linear-gradient(180deg,#fff,#fbfdff)}
     .mini .lbl{font-size:12px;color:var(--muted)}
     .mini .big{margin-top:8px;font-size:22px;font-weight:800}
     .mini .bar{height:8px;background:#edf3fb;border-radius:999px;overflow:hidden;margin-top:10px}
-    .mini .bar>div{height:100%;border-radius:999px}
-    .mini-note{margin-top:8px;font-size:12px;color:var(--muted)}
-    .calendar{
-      display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:14px
-    }
+    .mini .bar>div{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+    .mini .note{margin-top:8px;font-size:12px;color:var(--muted)}
+    .calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:14px}
     .day{
-      aspect-ratio:1/1;border-radius:14px;border:1px solid var(--line);background:#f8fafc;padding:8px;display:flex;flex-direction:column;justify-content:space-between;font-size:11px;color:var(--muted)
+      aspect-ratio:1/1;border-radius:14px;border:1px solid var(--line);background:#f8fafc;padding:8px;
+      display:flex;flex-direction:column;justify-content:space-between;font-size:11px;color:var(--muted)
     }
     .day .num{font-weight:700;color:#0f172a}
     .day.done{background:#e0f2fe;border-color:#bae6fd}
     .day.partial{background:#eff6ff;border-color:#bfdbfe}
-    .day.none{opacity:.62}
+    .day.none{opacity:.64}
     .day.today{box-shadow:inset 0 0 0 2px rgba(29,78,216,.24)}
-    .roadmap{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-    .step{border:1px solid var(--line);border-radius:20px;padding:16px;background:#fff}
-    .step.active{background:#eff6ff;border-color:#bfdbfe}
-    .step h4{margin:0;font-size:16px}
-    .step .lvl{margin-top:4px;font-size:12px;color:var(--muted)}
-    .step ul{margin:14px 0 0;padding:0 0 0 18px;color:#475569;line-height:1.7;font-size:13px}
-    .products{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
-    .product{border:1px solid var(--line);border-radius:22px;padding:16px;background:#fff;min-height:210px}
-    .product .img{
-      height:86px;border-radius:18px;background:linear-gradient(180deg,#f8fbff,#edf3fb);border:1px solid #e5edf8;display:grid;place-items:center;font-size:34px;margin-bottom:12px
-    }
-    .product h4{margin:0;font-size:16px}
-    .product p{margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.6}
-    .case-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
-    .case{border:1px solid var(--line);border-radius:20px;padding:16px;background:#fff}
-    .case-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
-    .case h4{margin:10px 0 0;font-size:16px}
-    .case p{margin:8px 0 0;color:var(--muted);font-size:13px;line-height:1.6}
-    .paper-list{display:flex;flex-direction:column;gap:10px}
-    .paper{display:flex;gap:12px;align-items:center;border:1px solid var(--line);background:#fff;border-radius:18px;padding:12px}
-    .paper .icon-box{width:48px;height:48px;border-radius:16px;background:#eef4ff;display:grid;place-items:center;font-size:20px;color:#2563eb;flex:none}
-    .paper .t1{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:10px}
-    .paper .t2{margin-top:4px;font-size:14px;font-weight:700;line-height:1.4}
-    .fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}
-    .field textarea,.field input{width:100%;padding:14px;border-radius:18px;border:1px solid var(--line);outline:none;resize:vertical;font:inherit;background:#fff}
-    .field textarea{min-height:120px}
-    .footer-note{margin-top:16px;padding:14px 16px;border-radius:18px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:13px;line-height:1.65}
     .report-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
-    .report-box{border:1px solid var(--line);border-radius:18px;padding:16px;background:linear-gradient(180deg,#fff,#fbfdff)}
-    .report-box h4{margin:0 0 8px;font-size:16px}
-    .report-box .desc{font-size:13px;color:var(--muted);line-height:1.6}
-    .report-box .score{margin-top:12px;font-size:28px;font-weight:800}
+    .report{border:1px solid var(--line);border-radius:18px;padding:16px;background:linear-gradient(180deg,#fff,#fbfdff)}
+    .report h3{margin:0;font-size:16px}
+    .report p{margin:8px 0 0;color:var(--muted);font-size:13px;line-height:1.6}
+    .report .score{margin-top:12px;font-size:28px;font-weight:800}
+    .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}
+    .field textarea{
+      width:100%;min-height:160px;padding:14px;border-radius:18px;border:1px solid var(--line);outline:none;resize:vertical;font:inherit;background:#fff
+    }
+    .note-box{
+      margin-top:16px;padding:14px 16px;border-radius:18px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:13px;line-height:1.65
+    }
+    .footer{margin-top:18px;text-align:center;color:var(--muted);font-size:12px;line-height:1.7}
     .toast{
       position:fixed;right:18px;bottom:18px;z-index:50;background:#0f172a;color:#fff;padding:12px 14px;border-radius:14px;
       box-shadow:0 14px 40px rgba(15,23,42,.2);opacity:0;transform:translateY(12px);pointer-events:none;transition:.25s ease;font-size:13px
     }
     .toast.show{opacity:1;transform:none}
-    .overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.38);z-index:30}
-    .overlay.show{display:block}
-    .muted{color:var(--muted)}
-    .section-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .section-title .left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-    .tiny{font-size:12px;color:var(--muted)}
-    .sep{height:1px;background:#eef2f7;margin:16px 0}
-    .hidden{display:none !important}
-    @media (max-width: 1280px){
-      .grid-stats,.mini-grid,.products,.report-grid{grid-template-columns:repeat(2,1fr)}
-      .section-grid,.two-col,.roadmap,.fields{grid-template-columns:1fr}
-      .case-grid{grid-template-columns:1fr}
+    @media (max-width: 1060px){
+      .grid-stats,.mini-grid,.report-grid,.field-grid{grid-template-columns:1fr 1fr}
     }
-    @media (max-width: 880px){
-      .app{grid-template-columns:1fr}
-      .sidebar{position:fixed;left:-300px;top:0;z-index:40;transition:.24s ease;width:280px}
-      .sidebar.open{left:0}
-      .menu{display:inline-flex}
-      .topbar-inner{padding:14px 16px}
-      .content{padding:14px 16px 22px}
-      .mobile-search{display:block}
-      .welcome{display:none}
-      .user .u-meta{display:none}
-      .grid-stats,.mini-grid,.products{grid-template-columns:1fr}
+    @media (max-width: 780px){
+      .grid-stats,.mini-grid,.report-grid,.field-grid{grid-template-columns:1fr}
+      .hero{padding:22px}
+      .hero h1{font-size:24px}
       .calendar{gap:6px}
     }
   </style>
 </head>
 <body>
-  <div class="overlay" id="overlay"></div>
   <div class="toast" id="toast"></div>
 
-  <div class="app">
-    <aside class="sidebar" id="sidebar">
-      <div class="brand">
-        <div class="logo">🧬</div>
+  <div class="wrap">
+    <div class="hero">
+      <div class="hero-top">
         <div>
-          <h1>BioSupport</h1>
-          <p>Learn · Solve · Grow</p>
+          <h1>BioSupport Tracker</h1>
+          <p>正式长期使用版。只保留首页内容，围绕每日打卡、真实日期连续记录、周/月报告、今日收获、导入导出和本地保存构建，适合每天打开使用。</p>
+        </div>
+        <div class="toolbar">
+          <button class="btn soft small" id="importBtn">导入历史数据</button>
+          <button class="btn good small" id="exportMdBtn">导出 Markdown</button>
+          <button class="btn primary small" id="exportXlsxBtn">导出 Excel</button>
         </div>
       </div>
-
-      <div class="side-card">
-        <div class="small">连续打卡</div>
-        <div class="big" id="streakValue">0 天</div>
-        <div class="row"><span>Lv. 12 技术支持专家</span><span id="xpText">0 / 1000 XP</span></div>
-        <div class="xpbar"><div id="xpBar"></div></div>
+      <div class="chips">
+        <div class="chip">🔥 连续打卡 <span id="streakChip">0 天</span></div>
+        <div class="chip">⭐ 累计积分 <span id="pointsChip">0</span></div>
+        <div class="chip">📊 本月完成率 <span id="monthRateChip">0%</span></div>
+        <div class="chip">📅 今日状态 <span id="todayStatusChip">进行中</span></div>
       </div>
+    </div>
 
-      <nav class="nav" id="nav"></nav>
+    <section class="grid-stats">
+      <div class="card stat"><div class="k">连续打卡</div><div class="v" id="streakValue">0 天</div><div class="sub">按真实日期计算</div></div>
+      <div class="card stat"><div class="k">累计积分</div><div class="v" id="pointsValue">0</div><div class="sub">每天最多一次</div></div>
+      <div class="card stat"><div class="k">近 30 天完成率</div><div class="v" id="monthRateValue">0%</div><div class="sub">自动生成月报</div></div>
+      <div class="card stat"><div class="k">今日状态</div><div class="v" id="todayStatusValue">进行中</div><div class="sub">完成后自动锁定</div></div>
+    </section>
 
-      <div class="quote">“持续学习，是成为专家的最快路径。”<br/>— BioSupport Tracker</div>
-    </aside>
+    <section class="section card">
+      <div class="section-h">
+        <div>
+          <h2>每日 4 项学习打卡</h2>
+          <p>完成四项后，今日记录自动锁定，不再重复增加连续天数或积分。</p>
+        </div>
+        <div class="toolbar">
+          <span class="chip2" id="todayDateChip">今天</span>
+          <span class="chip2" id="todayProgressChip">已完成 0/4</span>
+          <button class="btn ghost small" id="saveBtn">保存内容</button>
+        </div>
+      </div>
+      <div class="section-b">
+        <div class="tasks" id="taskList"></div>
 
-    <main class="main">
-      <div class="topbar">
-        <div class="topbar-inner">
-          <button class="menu" id="menuBtn">☰</button>
-          <div class="welcome">
-            <h2>欢迎回来</h2>
-            <p>把工作间隙的 40 分钟，变成可沉淀的成长资产。</p>
+        <div class="mini-grid" style="margin-top:16px">
+          <div class="mini">
+            <div class="lbl">今日进度</div>
+            <div class="big" id="todayProgressValue">0%</div>
+            <div class="bar"><div id="todayProgressBar" style="width:0%"></div></div>
+            <div class="note">完成四项后自动结算</div>
           </div>
-          <div class="search">
-            <span>🔎</span>
-            <input id="searchInput" placeholder="搜索产品、案例、文献、笔记..." />
+          <div class="mini">
+            <div class="lbl">今日积分</div>
+            <div class="big" id="todayPointsValue">0</div>
+            <div class="bar"><div id="todayPointsBar" style="width:0%"></div></div>
+            <div class="note">仅首次完成生效</div>
           </div>
-          <div class="user">
-            <div class="avatar">GM</div>
-            <div class="u-meta">
-              <div class="u-name">Grace Ma</div>
-              <div class="u-role">Technical Support</div>
-            </div>
+          <div class="mini">
+            <div class="lbl">本周完成天数</div>
+            <div class="big" id="weekDoneValue">0/7</div>
+            <div class="bar"><div id="weekDoneBar" style="width:0%"></div></div>
+            <div class="note">自动生成周报</div>
+          </div>
+          <div class="mini">
+            <div class="lbl">近 30 天完成天数</div>
+            <div class="big" id="monthDoneValue">0/30</div>
+            <div class="bar"><div id="monthDoneBar" style="width:0%"></div></div>
+            <div class="note">自动生成月报</div>
           </div>
         </div>
       </div>
+    </section>
 
-      <div class="mobile-search">
-        <div class="search" style="max-width:none">
-          <span>🔎</span>
-          <input id="searchInput2" placeholder="搜索产品、案例、文献、笔记..." />
+    <section class="section card">
+      <div class="section-h">
+        <div>
+          <h2>GitHub 风格学习日历</h2>
+          <p>蓝色表示进行中，绿色表示已完成，灰色表示未开始。按真实日期统计，不按点击次数统计。</p>
+        </div>
+        <div class="toolbar"><span class="chip2">最近 35 天</span></div>
+      </div>
+      <div class="section-b"><div class="calendar" id="calendar"></div></div>
+    </section>
+
+    <section class="section card">
+      <div class="section-h">
+        <div>
+          <h2>周 / 月学习报告</h2>
+          <p>系统自动汇总本周和近 30 天的完成情况，方便日常复盘。</p>
         </div>
       </div>
+      <div class="section-b">
+        <div class="report-grid">
+          <div class="report">
+            <h3>本周报告</h3>
+            <p>本周学习完成情况、节奏与积分变化。</p>
+            <div class="score" id="weeklyScore">0/7</div>
+            <div class="muted" id="weeklyDetail">完成 0 天，积分 0</div>
+          </div>
+          <div class="report">
+            <h3>本月报告</h3>
+            <p>近 30 天学习完成情况、完成率与累计积分。</p>
+            <div class="score" id="monthlyScore">0/30</div>
+            <div class="muted" id="monthlyDetail">完成率 0%，积分 0</div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-      <div class="content" id="content"></div>
-    </main>
+    <section class="section card">
+      <div class="section-h">
+        <div>
+          <h2>今日收获记录</h2>
+          <p>这里只记录你今天的收获。保存只写入浏览器本地；导出才会生成文件。</p>
+        </div>
+        <div class="toolbar">
+          <button class="btn good small" id="exportNoteMdBtn">导出 Markdown</button>
+          <button class="btn primary small" id="exportNoteXlsxBtn">导出 Excel</button>
+        </div>
+      </div>
+      <div class="section-b">
+        <div class="field-grid">
+          <div class="field">
+            <label>今日收获</label>
+            <textarea id="noteInput" placeholder="例如：KingFisher 乙醇残留会影响 PCR 扩增。"></textarea>
+          </div>
+          <div class="field">
+            <label>补充备注</label>
+            <textarea id="extraInput" placeholder="可记录客户需求、后续计划或明日要跟进的内容。"></textarea>
+          </div>
+        </div>
+        <div class="toolbar" style="margin-top:14px">
+          <button class="btn ghost" id="saveLocalBtn">保存内容</button>
+          <button class="btn soft" id="importBtn2">导入历史数据</button>
+          <button class="btn good" id="exportMdBtn2">导出 Markdown</button>
+          <button class="btn primary" id="exportXlsxBtn2">导出 Excel</button>
+          <input id="importFile" type="file" accept=".json,.xlsx,.xls" class="hidden" />
+        </div>
+        <div class="note-box">保存只会写入本地浏览器；导出 Markdown / Excel 会生成文件。每天建议只导出一次即可。</div>
+      </div>
+    </section>
+
+    <div class="footer">适用于 GitHub Pages · 单文件 index.html · 本地保存 · 真实日期连续打卡 · 可导入历史数据</div>
   </div>
 
 <script>
 (() => {
-  const STORAGE_KEY = 'biosupport-tracker-v8';
-  const VERSION = 'v8';
-
+  const STORAGE_KEY = 'biosupport-tracker-release-v2';
   const TASKS = [
     { id:'paper', label:'阅读一篇论文摘要', minutes:10, points:10 },
     { id:'product', label:'学习一个产品知识点', minutes:10, points:10 },
@@ -315,257 +292,22 @@
     { id:'summary', label:'总结并沉淀到知识库', minutes:10, points:5 },
   ];
 
-  const NAV = [
-    { key:'home', label:'首页', icon:'🏠' },
-    { key:'daily', label:'每日打卡', icon:'📅' },
-    { key:'calendar', label:'学习日历', icon:'🗓️' },
-    { key:'reports', label:'周/月报告', icon:'📊' },
-    { key:'notes', label:'今日收获', icon:'📝' },
-  ];
-
-  const PRODUCTS = [
-    { name:'PCR / qPCR', progress:80, modules:'8/10', desc:'基础原理、标准曲线、熔解曲线与常见失败原因' },
-    { name:'NGS', progress:65, modules:'13/20', desc:'文库构建、上机、质控与常见排障' },
-    { name:'Flow Cytometry', progress:70, modules:'7/10', desc:'补偿、门控、抗体选择与仪器维护' },
-    { name:'KingFisher', progress:75, modules:'6/8', desc:'磁珠提取、样本纯化、污染与回收率优化' },
-    { name:'Orbitrap MS', progress:60, modules:'9/15', desc:'蛋白质组、扫描模式、参数设置与数据分析' },
-  ];
-  const CASES = [
-    { tag:'qPCR', title:'Ct 值异常偏高或无扩增', date:'2024-05-20', level:'高频问题', summary:'排查模板质量、引物设计、反应体系、退火温度和污染可能。' },
-    { tag:'NGS', title:'文库主峰异常或无有效数据', date:'2024-05-18', level:'中等频率', summary:'重点关注片段分布、接头连接效率、定量偏差和测序指标。' },
-    { tag:'Flow', title:'信号弱或背景高', date:'2024-05-16', level:'高频问题', summary:'检查补偿、PMT、染色条件、洗涤步骤和细胞状态。' },
-    { tag:'KingFisher', title:'提取产量低', date:'2024-05-15', level:'中等频率', summary:'关注磁珠混匀、洗涤次数、样本输入量和乙醇残留。' },
-  ];
-  const PAPERS = [
-    { journal:'Nature', title:'Single-cell multiomic analysis of human tissues', date:'2024-05-20' },
-    { journal:'Cell', title:'Spatial multi-omics sequencing of cancer ecosystems', date:'2024-05-19' },
-    { journal:'Clinical Cancer Research', title:'A comprehensive review of liquid biopsy', date:'2024-05-18' },
-  ];
-  const ROADMAP = [
-    { stage:'Technical Support', level:'Lv.1 - Lv.2', items:['掌握基础产品原理','能完成标准问答','建立 FAQ 与 SOP 框架'] },
-    { stage:'Senior TS', level:'Lv.3 - Lv.4', items:['独立分析复杂案例','能做方案设计与培训','提升跨团队协作能力'] },
-    { stage:'Application Scientist', level:'Lv.5 - Lv.6', items:['输出应用方案与内容','支持重点客户与项目','形成可复用的方法论'] },
-  ];
-
-  function todayKey() {
-    const d = new Date();
-    return localDateKey(d);
-  }
-
   function localDateKey(d) {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
   }
-
+  function todayKey() { return localDateKey(new Date()); }
   function parseDateKey(key) {
     const [y,m,d] = key.split('-').map(Number);
     return new Date(y, m - 1, d);
   }
-
   function prevDateKey(key) {
     const d = parseDateKey(key);
     d.setDate(d.getDate() - 1);
     return localDateKey(d);
   }
-
-  function normalizeTaskState() {
-    return { paper:false, product:false, case:false, summary:false };
-  }
-
-  function defaultState() {
-    return {
-      version: VERSION,
-      currentTab: 'home',
-      search: '',
-      records: {},
-      note: '',
-      extraNote: '',
-      lastExportAt: null,
-      importAt: null,
-    };
-  }
-
-  function normalizeRecord(record) {
-    const base = {
-      tasks: normalizeTaskState(),
-      note: '',
-      completed: false,
-      points: 0,
-      completedAt: null
-    };
-    if (!record || typeof record !== 'object') return base;
-    if (record.tasks && typeof record.tasks === 'object') {
-      for (const k of Object.keys(base.tasks)) base.tasks[k] = !!record.tasks[k];
-    }
-    base.note = typeof record.note === 'string' ? record.note : '';
-    base.completed = !!record.completed;
-    base.points = Number(record.points) || 0;
-    base.completedAt = record.completedAt || null;
-    return base;
-  }
-
-  function normalizeState(raw) {
-    const s = Object.assign(defaultState(), raw || {});
-    s.version = VERSION;
-    s.records = s.records && typeof s.records === 'object' ? s.records : {};
-    s.note = typeof s.note === 'string' ? s.note : '';
-    s.extraNote = typeof s.extraNote === 'string' ? s.extraNote : '';
-    s.search = typeof s.search === 'string' ? s.search : '';
-    return s;
-  }
-
-  let state = loadState();
-  state.currentTab = state.currentTab || 'home';
-
-  function loadState() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return defaultState();
-      return normalizeState(JSON.parse(raw));
-    } catch {
-      return defaultState();
-    }
-  }
-
-  function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }
-
-  function toast(msg) {
-    const el = document.getElementById('toast');
-    el.textContent = msg;
-    el.classList.add('show');
-    clearTimeout(toast._t);
-    toast._t = setTimeout(() => el.classList.remove('show'), 1800);
-  }
-
-  function getDayRecord(dateKey) {
-    if (!state.records[dateKey]) {
-      state.records[dateKey] = normalizeRecord();
-    } else {
-      state.records[dateKey] = normalizeRecord(state.records[dateKey]);
-    }
-    return state.records[dateKey];
-  }
-
-  function isRecordComplete(record) {
-    return TASKS.every(t => !!record.tasks[t.id]);
-  }
-
-  function completeTodayIfNeeded() {
-    const today = todayKey();
-    const record = getDayRecord(today);
-    if (record.completed) return false;
-    if (!isRecordComplete(record)) return false;
-    record.completed = true;
-    record.points = TASKS.reduce((sum, t) => sum + t.points, 0);
-    record.completedAt = new Date().toISOString();
-    state.records[today] = record;
-    saveState();
-    return true;
-  }
-
-  function computeStreak() {
-    const completedDates = Object.keys(state.records)
-      .filter(date => state.records[date] && state.records[date].completed)
-      .sort();
-    if (!completedDates.length) return 0;
-    const today = todayKey();
-    const yesterday = prevDateKey(today);
-    const latest = completedDates[completedDates.length - 1];
-    if (latest !== today && latest !== yesterday) return 0;
-    let streak = 0;
-    let cursor = latest;
-    const completedSet = new Set(completedDates);
-    while (completedSet.has(cursor)) {
-      streak++;
-      cursor = prevDateKey(cursor);
-    }
-    return streak;
-  }
-
-  function computeTotalPoints() {
-    return Object.values(state.records).reduce((sum, r) => sum + (r && r.completed ? (Number(r.points) || 0) : 0), 0);
-  }
-
-  function computeWeeklyRows() {
-    const labels = ['周一','周二','周三','周四','周五','周六','周日'];
-    const current = parseDateKey(todayKey());
-    const monday = new Date(current);
-    const day = current.getDay() || 7;
-    monday.setDate(current.getDate() - day + 1);
-    const rows = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      const key = localDateKey(d);
-      const r = state.records[key];
-      const completed = !!(r && r.completed);
-      rows.push({
-        label: labels[i],
-        key,
-        completed,
-        rate: completed ? 100 : 0,
-        points: completed ? (Number(r.points) || 0) : 0,
-      });
-    }
-    return rows;
-  }
-
-  function computeRangeMetrics(days) {
-    const today = parseDateKey(todayKey());
-    let completedDays = 0;
-    let points = 0;
-    for (let i = 0; i < days; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      const key = localDateKey(d);
-      const r = state.records[key];
-      if (r && r.completed) {
-        completedDays++;
-        points += Number(r.points) || 0;
-      }
-    }
-    return { completedDays, points, rate: Math.round((completedDays / days) * 100) };
-  }
-
-  function buildCalendarRows() {
-    const today = parseDateKey(todayKey());
-    const start = new Date(today);
-    start.setDate(today.getDate() - 34);
-    const rows = [];
-    for (let i = 0; i < 35; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      const key = localDateKey(d);
-      const r = state.records[key];
-      const completed = !!(r && r.completed);
-      const partial = !!(r && !r.completed && Object.values(r.tasks || {}).some(Boolean));
-      rows.push({
-        date: key,
-        completed,
-        partial,
-        note: r && r.note ? r.note : '',
-        completedCount: completed ? 4 : partial ? Object.values(r.tasks || {}).filter(Boolean).length : 0,
-        today: key === todayKey(),
-      });
-    }
-    return rows;
-  }
-
-  function filterCases(items, query) {
-    const q = (query || '').trim().toLowerCase();
-    if (!q) return items;
-    return items.filter(c => [c.tag, c.title, c.summary, c.level].some(x => String(x).toLowerCase().includes(q)));
-  }
-
-  function filterCount(items, query) {
-    return filterCases(items, query).length;
-  }
-
-
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, ch => ({
       '&': '&amp;',
@@ -576,136 +318,162 @@
     }[ch]));
   }
 
-  function renderNav() {
-    const nav = document.getElementById('nav');
-    nav.innerHTML = NAV.map(n => `<button class="${state.currentTab===n.key ? 'active':''}" data-tab="${n.key}"><span style="width:22px;text-align:center">${n.icon}</span><span>${n.label}</span></button>`).join('');
-    nav.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
-      state.currentTab = btn.dataset.tab;
-      saveState();
-      renderAll();
-      closeSidebarOnMobile();
-    }));
+  function defaultRecord() {
+    return {
+      tasks: { paper:false, product:false, case:false, summary:false },
+      note:'',
+      extraNote:'',
+      completed:false,
+      points:0,
+      completedAt:null
+    };
   }
-
-  function exportMarkdown() {
-    const today = todayKey();
-    const record = getDayRecord(today);
-    const weekly = computeWeeklyRows();
-    const month = computeRangeMetrics(30);
-    const lines = [];
-    lines.push(`# BioSupport Tracker`);
-    lines.push('');
-    lines.push(`- 日期: ${today}`);
-    lines.push(`- 连续打卡: ${computeStreak()} 天`);
-    lines.push(`- 总积分: ${computeTotalPoints()}`);
-    lines.push(`- 今日完成: ${record.completed ? '已完成' : '未完成'}`);
-    lines.push('');
-    lines.push('## 每日打卡');
-    TASKS.forEach(t => lines.push(`- [${record.tasks[t.id] ? 'x' : ' '}] ${t.label}（${t.minutes} min，+${t.points} 分）`));
-    lines.push('');
-    lines.push('## 今日收获');
-    lines.push(record.note ? record.note : '（空）');
-    lines.push('');
-    lines.push('## 每周完成情况');
-    weekly.forEach(r => lines.push(`- ${r.label}: ${r.completed ? '已完成' : '未完成'}`));
-    lines.push('');
-    lines.push('## 本月学习报告');
-    lines.push(`- 完成天数: ${month.completedDays}`);
-    lines.push(`- 完成率: ${month.rate}%`);
-    lines.push(`- 获得积分: ${month.points}`);
-    lines.push('');
-    lines.push('## 学习日历');
-    buildCalendarRows().forEach(r => lines.push(`- ${r.date}: ${r.completed ? '已完成' : r.partial ? '进行中' : '未开始'}`));
-    lines.push('');
-    lines.push('## 全部记录');
-    Object.keys(state.records).sort().forEach(date => {
-      const r = state.records[date];
-      lines.push(`### ${date}`);
-      lines.push(`- 完成: ${r.completed ? '是' : '否'}`);
-      lines.push(`- 积分: ${r.points || 0}`);
-      if (r.note) lines.push(`- 收获: ${r.note.replace(/\n/g, ' ')}`);
-      lines.push('');
-    });
-    downloadText(lines.join('\n'), `biosupport_${today}.md`, 'text/markdown;charset=utf-8');
-    state.lastExportAt = new Date().toISOString();
-    saveState();
-    toast('已导出 Markdown');
+  function defaultState() {
+    return {
+      records:{},
+      importedAt:null,
+      lastSavedAt:null,
+      lastExportAt:null
+    };
   }
-
-  function exportExcel() {
-    if (typeof XLSX === 'undefined') {
-      toast('Excel 库未加载，请稍后重试');
-      return;
+  function normalizeRecord(r) {
+    const base = defaultRecord();
+    if (!r || typeof r !== 'object') return base;
+    if (r.tasks && typeof r.tasks === 'object') {
+      for (const k of Object.keys(base.tasks)) base.tasks[k] = !!r.tasks[k];
     }
-    const wb = XLSX.utils.book_new();
+    base.note = typeof r.note === 'string' ? r.note : '';
+    base.extraNote = typeof r.extraNote === 'string' ? r.extraNote : '';
+    base.completed = !!r.completed;
+    base.points = Number(r.points) || 0;
+    base.completedAt = r.completedAt || null;
+    return base;
+  }
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return defaultState();
+      const parsed = JSON.parse(raw);
+      const state = Object.assign(defaultState(), parsed || {});
+      state.records = state.records && typeof state.records === 'object' ? state.records : {};
+      return state;
+    } catch {
+      return defaultState();
+    }
+  }
+
+  const state = loadState();
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    state.lastSavedAt = new Date().toISOString();
+  }
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => el.classList.remove('show'), 1800);
+  }
+  function getRecord(dateKey) {
+    if (!state.records[dateKey]) state.records[dateKey] = defaultRecord();
+    state.records[dateKey] = normalizeRecord(state.records[dateKey]);
+    return state.records[dateKey];
+  }
+  function isComplete(record) {
+    return TASKS.every(t => !!record.tasks[t.id]);
+  }
+  function completeTodayIfNeeded() {
     const today = todayKey();
-    const record = getDayRecord(today);
-    const streak = computeStreak();
-    const points = computeTotalPoints();
-    const weekly = computeWeeklyRows();
-    const month = computeRangeMetrics(30);
-    const cal = buildCalendarRows();
+    const record = getRecord(today);
+    if (record.completed) return false;
+    if (!isComplete(record)) return false;
+    record.completed = true;
+    record.completedAt = new Date().toISOString();
+    record.points = TASKS.reduce((sum, t) => sum + t.points, 0);
+    state.records[today] = record;
+    return true;
+  }
+  function computeStreak() {
+    const completedDates = Object.keys(state.records).filter(d => state.records[d] && state.records[d].completed).sort();
+    if (!completedDates.length) return 0;
+    const today = todayKey();
+    const yesterday = prevDateKey(today);
+    const latest = completedDates[completedDates.length - 1];
+    if (latest !== today && latest !== yesterday) return 0;
+    let streak = 0;
+    let cursor = latest;
+    const set = new Set(completedDates);
+    while (set.has(cursor)) {
+      streak++;
+      cursor = prevDateKey(cursor);
+    }
+    return streak;
+  }
+  function computeTotalPoints() {
+    return Object.values(state.records).reduce((sum, r) => sum + (r && r.completed ? (Number(r.points) || 0) : 0), 0);
+  }
+  function computeWeekly() {
+    const now = parseDateKey(todayKey());
+    const day = now.getDay() || 7;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - day + 1);
+    let done = 0, points = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const key = localDateKey(d);
+      const r = state.records[key];
+      if (r && r.completed) {
+        done++;
+        points += Number(r.points) || 0;
+      }
+    }
+    return { done, points, rate: Math.round((done / 7) * 100) };
+  }
+  function computeMonthly(days = 30) {
+    const now = parseDateKey(todayKey());
+    let done = 0, points = 0;
+    for (let i = 0; i < days; i++) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      const key = localDateKey(d);
+      const r = state.records[key];
+      if (r && r.completed) {
+        done++;
+        points += Number(r.points) || 0;
+      }
+    }
+    return { done, points, rate: Math.round((done / days) * 100) };
+  }
+  function calendarRows() {
+    const now = parseDateKey(todayKey());
+    const start = new Date(now);
+    start.setDate(now.getDate() - 34);
+    const rows = [];
+    for (let i = 0; i < 35; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const key = localDateKey(d);
+      const r = state.records[key];
+      const complete = !!(r && r.completed);
+      const partial = !!(r && !r.completed && Object.values(r.tasks || {}).some(Boolean));
+      rows.push({ date:key, complete, partial, today:key === todayKey(), note:r && r.note ? r.note : '' });
+    }
+    return rows;
+  }
+  function currentDaySummary() {
+    const r = getRecord(todayKey());
+    const done = TASKS.filter(t => !!r.tasks[t.id]).length;
+    const progress = Math.round((done / TASKS.length) * 100);
+    return { record:r, done, progress, todayPoints:r.completed ? 40 : 0 };
+  }
 
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
-      { key:'日期', value: today },
-      { key:'连续打卡', value: streak },
-      { key:'总积分', value: points },
-      { key:'今日完成', value: record.completed ? '是' : '否' },
-      { key:'今日收获', value: record.note || '' },
-      { key:'导出时间', value: new Date().toLocaleString('zh-CN') },
-    ]), 'Summary');
-
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(TASKS.map(t => ({
-      日期: today,
-      任务: t.label,
-      分钟: t.minutes,
-      积分: t.points,
-      完成: record.tasks[t.id] ? '是' : '否',
-    }))), 'Today');
-
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(Object.keys(state.records).sort().map(date => {
-      const r = state.records[date];
-      return {
-        日期: date,
-        完成: r.completed ? '是' : '否',
-        积分: Number(r.points) || 0,
-        今日收获: r.note || '',
-        任务完成数: TASKS.filter(t => r.tasks && r.tasks[t.id]).length,
-        完成时间: r.completedAt || '',
-      };
-    })), 'Records');
-
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(weekly.map(r => ({
-      周次: r.label,
-      日期: r.key,
-      完成: r.completed ? '是' : '否',
-      积分: r.points,
-    }))), 'Weekly');
-
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{
-      范围: '近30天',
-      完成天数: month.completedDays,
-      完成率: `${month.rate}%`,
-      获得积分: month.points
-    }]), 'Monthly');
-
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(cal.map(r => ({
-      日期: r.date,
-      状态: r.completed ? '已完成' : r.partial ? '进行中' : '未开始',
-      完成任务: r.completedCount,
-      今日收获: r.note || ''
-    }))), 'Calendar');
-
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{
-      '今日收获': record.note || '',
-      '补充备注': state.extraNote || '',
-      '是否完成': record.completed ? '是' : '否',
-    }]), 'Notes');
-
-    XLSX.writeFile(wb, `biosupport_${today}.xlsx`);
-    state.lastExportAt = new Date().toISOString();
-    saveState();
-    toast('已导出 Excel');
+  function updateStateFromInputs() {
+    const r = getRecord(todayKey());
+    r.note = document.getElementById('noteInput').value || '';
+    r.extraNote = document.getElementById('extraInput').value || '';
+    state.records[todayKey()] = r;
   }
 
   function downloadText(text, filename, mime) {
@@ -720,12 +488,183 @@
     setTimeout(() => URL.revokeObjectURL(url), 800);
   }
 
-  function saveLocalOnly() {
+  function exportMarkdown() {
+    updateStateFromInputs();
     saveState();
-    toast('已保存到浏览器本地');
+    const today = todayKey();
+    const r = getRecord(today);
+    const weekly = computeWeekly();
+    const monthly = computeMonthly(30);
+    const lines = [];
+    lines.push('# BioSupport Tracker');
+    lines.push('');
+    lines.push(`- 日期: ${today}`);
+    lines.push(`- 连续打卡: ${computeStreak()} 天`);
+    lines.push(`- 累计积分: ${computeTotalPoints()}`);
+    lines.push(`- 今日状态: ${r.completed ? '已完成' : '进行中'}`);
+    lines.push('');
+    lines.push('## 每日 4 项学习打卡');
+    TASKS.forEach(t => lines.push(`- [${r.tasks[t.id] ? 'x' : ' '}] ${t.label}（${t.minutes} min，+${t.points} 分）`));
+    lines.push('');
+    lines.push('## 今日收获记录');
+    lines.push(r.note || '（空）');
+    lines.push('');
+    lines.push('## 补充备注');
+    lines.push(r.extraNote || '（空）');
+    lines.push('');
+    lines.push('## 本周学习报告');
+    lines.push(`- 完成天数: ${weekly.done}/7`);
+    lines.push(`- 完成率: ${weekly.rate}%`);
+    lines.push(`- 积分: ${weekly.points}`);
+    lines.push('');
+    lines.push('## 本月学习报告');
+    lines.push(`- 完成天数: ${monthly.done}/30`);
+    lines.push(`- 完成率: ${monthly.rate}%`);
+    lines.push(`- 积分: ${monthly.points}`);
+    lines.push('');
+    lines.push('## 学习日历');
+    calendarRows().forEach(d => lines.push(`- ${d.date}: ${d.complete ? '已完成' : d.partial ? '进行中' : '未开始'}`));
+    lines.push('');
+    lines.push('## 全部记录');
+    Object.keys(state.records).sort().forEach(date => {
+      const rec = normalizeRecord(state.records[date]);
+      lines.push(`### ${date}`);
+      lines.push(`- 完成: ${rec.completed ? '是' : '否'}`);
+      lines.push(`- 积分: ${rec.points || 0}`);
+      if (rec.note) lines.push(`- 收获: ${rec.note.replace(/\n/g,' ')}`);
+      if (rec.extraNote) lines.push(`- 备注: ${rec.extraNote.replace(/\n/g,' ')}`);
+      lines.push('');
+    });
+    downloadText(lines.join('\n'), `biosupport_${today}.md`, 'text/markdown;charset=utf-8');
+    state.lastExportAt = new Date().toISOString();
+    saveState();
+    toast('已导出 Markdown');
   }
 
-  function importDataFromFile(file) {
+  function exportExcel() {
+    if (typeof XLSX === 'undefined') {
+      toast('Excel 库未加载，请稍后重试');
+      return;
+    }
+    updateStateFromInputs();
+    saveState();
+    const wb = XLSX.utils.book_new();
+    const today = todayKey();
+    const r = getRecord(today);
+    const weekly = computeWeekly();
+    const monthly = computeMonthly(30);
+    const cal = calendarRows();
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+      { 项目:'日期', 值:today },
+      { 项目:'连续打卡', 值:computeStreak() },
+      { 项目:'累计积分', 值:computeTotalPoints() },
+      { 项目:'今日状态', 值:r.completed ? '已完成' : '进行中' },
+      { 项目:'今日收获', 值:r.note || '' },
+      { 项目:'补充备注', 值:r.extraNote || '' },
+      { 项目:'导出时间', 值:new Date().toLocaleString('zh-CN') },
+    ]), 'Summary');
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(TASKS.map(t => ({
+      日期: today,
+      任务: t.label,
+      分钟: t.minutes,
+      积分: t.points,
+      完成: r.tasks[t.id] ? '是' : '否',
+    }))), 'Today');
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(Object.keys(state.records).sort().map(date => {
+      const rec = normalizeRecord(state.records[date]);
+      return {
+        日期: date,
+        完成: rec.completed ? '是' : '否',
+        积分: rec.points || 0,
+        今日收获: rec.note || '',
+        补充备注: rec.extraNote || '',
+        完成时间: rec.completedAt || '',
+      };
+    })), 'Records');
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+      { 周次:'本周', 完成天数:weekly.done, 目标天数:7, 完成率:`${weekly.rate}%`, 积分:weekly.points }
+    ]), 'Weekly');
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+      { 范围:'近30天', 完成天数:monthly.done, 目标天数:30, 完成率:`${monthly.rate}%`, 积分:monthly.points }
+    ]), 'Monthly');
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(cal.map(d => ({
+      日期: d.date,
+      状态: d.complete ? '已完成' : d.partial ? '进行中' : '未开始',
+      今日收获: d.note || '',
+    }))), 'Calendar');
+
+    XLSX.writeFile(wb, `biosupport_${today}.xlsx`);
+    state.lastExportAt = new Date().toISOString();
+    saveState();
+    toast('已导出 Excel');
+  }
+
+  function mergeImportedJson(parsed) {
+    if (!parsed || typeof parsed !== 'object') return;
+    if (parsed.records && typeof parsed.records === 'object') {
+      for (const [date, rec] of Object.entries(parsed.records)) {
+        state.records[date] = normalizeRecord(rec);
+      }
+    }
+    if (parsed.note) getRecord(todayKey()).note = String(parsed.note);
+    if (parsed.extraNote) getRecord(todayKey()).extraNote = String(parsed.extraNote);
+  }
+  function mergeImportedWorkbook(wb) {
+    const names = wb.SheetNames || [];
+    const recordsSheet = names.find(s => /records/i.test(s));
+    const todaySheet = names.find(s => /^today$/i.test(s));
+    const notesSheet = names.find(s => /notes/i.test(s));
+
+    if (recordsSheet) {
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[recordsSheet], { defval:'' });
+      rows.forEach(r => {
+        const date = r['日期'] || r['date'];
+        if (!date) return;
+        state.records[String(date)] = normalizeRecord({
+          completed: String(r['完成'] || '') === '是',
+          points: Number(r['积分'] || 0) || 0,
+          note: String(r['今日收获'] || ''),
+          extraNote: String(r['补充备注'] || ''),
+          completedAt: r['完成时间'] || null,
+          tasks: {
+            paper: String(r['完成'] || '') === '是',
+            product: String(r['完成'] || '') === '是',
+            case: String(r['完成'] || '') === '是',
+            summary: String(r['完成'] || '') === '是',
+          }
+        });
+      });
+    }
+    if (todaySheet) {
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[todaySheet], { defval:'' });
+      const r = getRecord(todayKey());
+      rows.forEach(row => {
+        const task = String(row['任务'] || '').toLowerCase();
+        const done = String(row['完成'] || '') === '是';
+        if (task.includes('论文')) r.tasks.paper = done;
+        if (task.includes('产品')) r.tasks.product = done;
+        if (task.includes('case') || task.includes('案例')) r.tasks.case = done;
+        if (task.includes('总结')) r.tasks.summary = done;
+      });
+      if (isComplete(r)) completeTodayIfNeeded();
+      state.records[todayKey()] = r;
+    }
+    if (notesSheet) {
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[notesSheet], { defval:'' });
+      if (rows[0]) {
+        getRecord(todayKey()).note = String(rows[0]['今日收获'] || getRecord(todayKey()).note || '');
+        getRecord(todayKey()).extraNote = String(rows[0]['补充备注'] || getRecord(todayKey()).extraNote || '');
+      }
+    }
+  }
+
+  function importData(file) {
     const name = (file.name || '').toLowerCase();
     if (name.endsWith('.json')) {
       const reader = new FileReader();
@@ -734,7 +673,7 @@
           const parsed = JSON.parse(String(reader.result || '{}'));
           mergeImportedJson(parsed);
           saveState();
-          renderAll();
+          render();
           toast('已导入 JSON 数据');
         } catch (e) {
           alert('JSON 导入失败：' + e.message);
@@ -755,7 +694,7 @@
           const wb = XLSX.read(data, { type:'array' });
           mergeImportedWorkbook(wb);
           saveState();
-          renderAll();
+          render();
           toast('已导入 Excel 数据');
         } catch (e) {
           alert('Excel 导入失败：' + e.message);
@@ -767,470 +706,134 @@
     alert('仅支持 .json / .xlsx / .xls 文件');
   }
 
-  function mergeImportedJson(parsed) {
-    if (!parsed || typeof parsed !== 'object') return;
-    if (parsed.records && typeof parsed.records === 'object') {
-      for (const [date, value] of Object.entries(parsed.records)) {
-        state.records[date] = normalizeRecord(value);
-      }
-    }
-    if (parsed.note && !state.note) state.note = String(parsed.note);
-    if (parsed.extraNote && !state.extraNote) state.extraNote = String(parsed.extraNote);
+  function renderTasks() {
+    const wrap = document.getElementById('taskList');
+    const r = getRecord(todayKey());
+    const locked = r.completed;
+    wrap.innerHTML = TASKS.map(t => {
+      const active = !!r.tasks[t.id];
+      return `
+        <button class="task ${active ? 'completed' : ''} ${locked ? 'locked' : ''}" data-task="${t.id}" ${locked ? 'disabled' : ''}>
+          <div class="task-left">
+            <div class="check">${active ? '✓' : ''}</div>
+            <div>
+              <div class="task-title">${t.label}</div>
+              <div class="task-meta">${t.minutes} min · +${t.points} 分</div>
+            </div>
+          </div>
+          <div class="badge ${locked ? 'good' : active ? 'good' : ''}">${locked ? '今日已锁定' : active ? '已完成' : '待办'}</div>
+        </button>
+      `;
+    }).join('');
+    wrap.querySelectorAll('[data-task]').forEach(btn => {
+      btn.addEventListener('click', () => toggleTask(btn.dataset.task));
+    });
   }
 
-  function mergeImportedWorkbook(wb) {
-    const sheets = wb.SheetNames || [];
-    const recordsSheet = sheets.find(s => /records/i.test(s));
-    const notesSheet = sheets.find(s => /notes/i.test(s));
-    const todaySheet = sheets.find(s => /^today$/i.test(s));
-    if (recordsSheet) {
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[recordsSheet], { defval:'' });
-      rows.forEach(r => {
-        const date = r['日期'] || r['date'];
-        if (!date) return;
-        state.records[String(date)] = {
-          tasks: {
-            paper: String(r['任务完成数'] || '') === '4',
-            product: String(r['任务完成数'] || '') === '4',
-            case: String(r['任务完成数'] || '') === '4',
-            summary: String(r['任务完成数'] || '') === '4',
-          },
-          note: String(r['今日收获'] || ''),
-          completed: String(r['完成'] || '') === '是',
-          points: Number(r['积分'] || 0) || 0,
-          completedAt: r['完成时间'] || null
-        };
-      });
-    }
-    if (notesSheet) {
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[notesSheet], { defval:'' });
-      if (rows[0]) {
-        state.note = String(rows[0]['今日收获'] || state.note || '');
-        state.extraNote = String(rows[0]['补充备注'] || state.extraNote || '');
-      }
-    }
-    if (todaySheet) {
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[todaySheet], { defval:'' });
-      const today = todayKey();
-      const rec = getDayRecord(today);
-      rows.forEach(r => {
-        const task = String(r['任务'] || '').toLowerCase();
-        const done = String(r['完成'] || '') === '是';
-        if (task.includes('论文')) rec.tasks.paper = done;
-        if (task.includes('产品')) rec.tasks.product = done;
-        if (task.includes('case') || task.includes('案例')) rec.tasks.case = done;
-        if (task.includes('总结')) rec.tasks.summary = done;
-      });
-      state.records[today] = rec;
-      if (isRecordComplete(rec)) {
-        completeTodayIfNeeded();
-      }
-    }
+  function renderCalendar() {
+    const el = document.getElementById('calendar');
+    const rows = calendarRows();
+    el.innerHTML = rows.map(d => `
+      <div class="day ${d.complete ? 'done' : d.partial ? 'partial' : 'none'} ${d.today ? 'today' : ''}">
+        <div class="num">${new Date(d.date + 'T00:00:00').getDate()}</div>
+        <div>${d.complete ? '已完成' : d.partial ? '进行中' : '未开始'}</div>
+      </div>
+    `).join('');
   }
 
-  function setCurrentNoteFromUI() {
-    const noteInput = document.getElementById('noteInput');
-    const extraInput = document.getElementById('extraInput');
-    if (noteInput) state.note = noteInput.value;
-    if (extraInput) state.extraNote = extraInput.value;
-    const today = todayKey();
-    const rec = getDayRecord(today);
-    rec.note = state.note || '';
-    state.records[today] = rec;
-    saveState();
-  }
-
-  function toggleTask(taskId) {
-    const today = todayKey();
-    const record = getDayRecord(today);
-    if (record.completed) {
-      toast('今日已完成，不能重复计分');
-      return;
-    }
-    record.tasks[taskId] = !record.tasks[taskId];
-    state.records[today] = record;
-    if (isRecordComplete(record)) {
-      const doneNow = completeTodayIfNeeded();
-      if (doneNow) toast('今日打卡完成 +40 XP');
-    } else {
-      saveState();
-    }
-    renderAll();
-  }
-
-  function markDayButtonState(el, dateKey, record, today) {
-    const completed = !!(record && record.completed);
-    const partial = !!(record && !record.completed && Object.values(record.tasks || {}).some(Boolean));
-    el.classList.remove('done','partial','none','today');
-    if (dateKey === today) el.classList.add('today');
-    if (completed) el.classList.add('done');
-    else if (partial) el.classList.add('partial');
-    else el.classList.add('none');
-    const num = el.querySelector('.num');
-    const status = el.querySelector('.status');
-    if (num) num.textContent = String(parseDateKey(dateKey).getDate());
-    if (status) status.textContent = completed ? '已完成' : partial ? '进行中' : '未开始';
-  }
-
-  function closeSidebarOnMobile() {
-    document.getElementById('sidebar').classList.remove('open');
-    document.getElementById('overlay').classList.remove('show');
-  }
-
-  function renderContent() {
-    const today = todayKey();
-    const record = getDayRecord(today);
-    const completedCount = TASKS.filter(t => !!record.tasks[t.id]).length;
-    const progress = Math.round((completedCount / TASKS.length) * 100);
+  function renderSummary() {
     const streak = computeStreak();
     const totalPoints = computeTotalPoints();
-    const week = computeWeeklyRows();
-    const month = computeRangeMetrics(30);
-    const cal = buildCalendarRows();
+    const weekly = computeWeekly();
+    const monthly = computeMonthly(30);
+    const { record, done, progress, todayPoints } = currentDaySummary();
+    const today = todayKey();
+
+    document.getElementById('streakChip').textContent = `${streak} 天`;
+    document.getElementById('pointsChip').textContent = `${totalPoints}`;
+    document.getElementById('monthRateChip').textContent = `${monthly.rate}%`;
+    document.getElementById('todayStatusChip').textContent = record.completed ? '已完成' : '进行中';
 
     document.getElementById('streakValue').textContent = `${streak} 天`;
-    document.getElementById('xpText').textContent = `${Math.min(1000, totalPoints)} / 1000 XP`;
-    document.getElementById('xpBar').style.width = `${Math.min(100, Math.round(Math.min(1000, totalPoints)/10))}%`;
+    document.getElementById('pointsValue').textContent = `${totalPoints}`;
+    document.getElementById('monthRateValue').textContent = `${monthly.rate}%`;
+    document.getElementById('todayStatusValue').textContent = record.completed ? '已完成' : '进行中';
 
-    const dashboardSection = `
-      <section class="grid-stats">
-        <div class="card stat"><div class="row"><div class="k">连续打卡</div><div>🔥</div></div><div class="v">${streak} 天</div></div>
-        <div class="card stat"><div class="row"><div class="k">累计积分</div><div>⭐</div></div><div class="v">${totalPoints}</div></div>
-        <div class="card stat"><div class="row"><div class="k">近30天完成率</div><div>📊</div></div><div class="v">${month.rate}%</div></div>
-        <div class="card stat"><div class="row"><div class="k">今日完成</div><div>📅</div></div><div class="v">${record.completed ? '已完成' : '进行中'}</div></div>
-      </section>
-    `;
+    document.getElementById('todayDateChip').textContent = `今天：${today}`;
+    document.getElementById('todayProgressChip').textContent = `已完成 ${done}/4`;
+    document.getElementById('todayProgressValue').textContent = `${progress}%`;
+    document.getElementById('todayPointsValue').textContent = `${todayPoints}`;
+    document.getElementById('todayProgressBar').style.width = `${progress}%`;
+    document.getElementById('todayPointsBar').style.width = `${record.completed ? 100 : 0}%`;
 
-    const taskSection = `
-      <section class="section-grid">
-        <div class="card">
-          <div class="card-h">
-            <div class="section-title">
-              <div class="left">
-                <h3>每日 4 项学习打卡</h3>
-                <span class="chip">今日 ${today}</span>
-              </div>
-              <div class="toolbar">
-                <span class="chip">已完成 ${completedCount}/4</span>
-                <span class="chip">今日进度 ${progress}%</span>
-              </div>
-            </div>
-            <p>按真实日期计算连续打卡，每天最多计一次分数与连续天数。</p>
-          </div>
-          <div class="card-b">
-            <div class="task-list">
-              ${TASKS.map(t => {
-                const active = !!record.tasks[t.id];
-                return `
-                  <button class="task ${active ? 'active':''} ${record.completed ? 'locked':''}" data-task="${t.id}" ${record.completed ? 'disabled' : ''}>
-                    <div class="left">
-                      <div class="check">${active ? '✓' : ''}</div>
-                      <div>
-                        <div class="title">${t.label}</div>
-                        <div class="meta">${t.minutes} min · +${t.points} 分</div>
-                      </div>
-                    </div>
-                    <div class="badge ${record.completed ? 'good' : active ? 'good' : ''}">${record.completed ? '今日已锁定' : (active ? '已完成' : '待办')}</div>
-                  </button>
-                `;
-              }).join('')}
-            </div>
-            <div class="sep"></div>
-            <div class="toolbar">
-              <button class="btn ghost" id="saveLocalBtn">保存内容</button>
-              <button class="btn soft" id="importBtn">导入历史数据</button>
-              <button class="btn good" id="exportMdBtn">导出 Markdown</button>
-              <button class="btn primary" id="exportXlsxBtn">导出 Excel</button>
-            </div>
-            <input id="importFile" type="file" accept=".json,.xlsx,.xls" class="hidden" />
-            <div style="margin-top:14px" class="report-box">
-              <div class="section-title">
-                <div class="left"><strong>今日完成状态</strong></div>
-                <span class="badge ${record.completed ? 'good' : progress === 100 ? 'blue' : ''}">${record.completed ? '今日已完成' : progress === 100 ? '可完成' : '继续打卡'}</span>
-              </div>
-              <div style="margin-top:10px" class="progress-wrap"><div class="progress-fill" style="width:${progress}%"></div></div>
-              <div class="tiny" style="margin-top:10px">完成后会自动写入本地，并锁定当天的积分与连续天数，避免重复计数。</div>
-            </div>
-          </div>
-        </div>
+    document.getElementById('weekDoneValue').textContent = `${weekly.done}/7`;
+    document.getElementById('weekDoneBar').style.width = `${Math.round((weekly.done / 7) * 100)}%`;
+    document.getElementById('monthDoneValue').textContent = `${monthly.done}/30`;
+    document.getElementById('monthDoneBar').style.width = `${Math.round((monthly.done / 30) * 100)}%`;
 
-        <div class="card">
-          <div class="card-h">
-            <h3>连续打卡与积分</h3>
-            <p>基于真实日期计算，而不是页面打开次数或点击次数。</p>
-          </div>
-          <div class="card-b">
-            <div class="mini-grid">
-              <div class="mini">
-                <div class="lbl">连续打卡</div>
-                <div class="big">${streak} 天</div>
-                <div class="mini-note">同一天只加一次</div>
-              </div>
-              <div class="mini">
-                <div class="lbl">累计积分</div>
-                <div class="big">${totalPoints}</div>
-                <div class="mini-note">同一天只记一次</div>
-              </div>
-              <div class="mini">
-                <div class="lbl">本月完成率</div>
-                <div class="big">${month.rate}%</div>
-                <div class="mini-note">${month.completedDays}/30 天</div>
-              </div>
-              <div class="mini">
-                <div class="lbl">今日积分</div>
-                <div class="big">${record.completed ? 40 : 0}</div>
-                <div class="mini-note">仅第一次完成生效</div>
-              </div>
-            </div>
-            <div class="sep"></div>
-            <div class="report-grid">
-              <div class="report-box">
-                <h4>本周完成情况</h4>
-                <div class="desc">自动统计本周 7 天的完成情况，快速查看节奏。</div>
-                <div class="score">${week.filter(x => x.completed).length}/7</div>
-              </div>
-              <div class="report-box">
-                <h4>本月学习报告</h4>
-                <div class="desc">自动统计近 30 天完成天数、完成率与积分累计。</div>
-                <div class="score">${month.completedDays}</div>
-                <div class="tiny">完成天数 · ${month.points} 积分</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    `;
+    document.getElementById('weeklyScore').textContent = `${weekly.done}/7`;
+    document.getElementById('weeklyDetail').textContent = `完成 ${weekly.done} 天，积分 ${weekly.points}`;
+    document.getElementById('monthlyScore').textContent = `${monthly.done}/30`;
+    document.getElementById('monthlyDetail').textContent = `完成率 ${monthly.rate}%，积分 ${monthly.points}`;
 
-    const calendarSection = `
-      <section class="card" style="margin-bottom:18px">
-        <div class="card-h">
-          <div class="section-title">
-            <div class="left">
-              <h3>GitHub 风格学习日历</h3>
-              <span class="chip">近 35 天</span>
-            </div>
-            <span class="chip">按真实日期统计</span>
-          </div>
-          <p>显示过去 35 天的学习状态：已完成、进行中、未开始。</p>
-        </div>
-        <div class="card-b">
-          <div class="calendar" id="calendarGrid">
-            ${cal.map(d => `
-              <div class="day ${d.completed ? 'done' : d.partial ? 'partial' : 'none'} ${d.today ? 'today' : ''}" data-date="${d.date}">
-                <div class="num">${new Date(d.date + 'T00:00:00').getDate()}</div>
-                <div class="status">${d.completed ? '已完成' : d.partial ? '进行中' : '未开始'}</div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      </section>
-    `;
-
-    const reportsSection = `
-      <section class="card" style="margin-bottom:18px">
-        <div class="card-h"><h3>周 / 月学习报告</h3><p>报告会随着每一天的真实打卡自动变化。</p></div>
-        <div class="card-b">
-          <div class="report-grid">
-            <div class="report-box">
-              <h4>本周概览</h4>
-              <div class="desc">当前周学习完成情况。</div>
-              <div class="score">${week.filter(x => x.completed).length}/7</div>
-            </div>
-            <div class="report-box">
-              <h4>近 30 天概览</h4>
-              <div class="desc">完成天数、完成率与积分累计。</div>
-              <div class="score">${month.completedDays}</div>
-              <div class="tiny">${month.rate}% 完成率 · ${month.points} 积分</div>
-            </div>
-          </div>
-        </div>
-      </section>
-    `;
-
-    const notesSection = `
-      <section class="card" style="margin-bottom:18px">
-        <div class="card-h">
-          <div class="section-title">
-            <div class="left">
-              <h3>今日收获记录</h3>
-              <span class="chip">本地保存 + 导出整页 Excel</span>
-            </div>
-            <div class="toolbar">
-              <button class="btn primary small" id="pageExcelBtn">导出整页 Excel</button>
-            </div>
-          </div>
-          <p>建议把今天最重要的一条结论写下来，形成长期可搜索的知识资产。</p>
-        </div>
-        <div class="card-b">
-          <div class="fields">
-            <div class="field">
-              <label>今日收获</label>
-              <textarea id="noteInput" placeholder="例如：KingFisher 乙醇残留会影响 PCR 扩增。">${escapeHtml(record.note || state.note || '')}</textarea>
-            </div>
-            <div class="field">
-              <label>补充备注</label>
-              <textarea id="extraInput" placeholder="可记录客户需求、学习重点或明日计划。">${escapeHtml(state.extraNote || '')}</textarea>
-            </div>
-          </div>
-          <div class="toolbar" style="margin-top:14px">
-            <button class="btn ghost" id="saveNoteBtn">保存内容</button>
-            <button class="btn good" id="exportNoteMdBtn">导出 Markdown</button>
-            <button class="btn primary" id="exportNoteXlsxBtn">导出 Excel</button>
-          </div>
-          <div class="footer-note">
-            <strong>说明：</strong>“保存内容”只会保存到浏览器本地，不会自动下载文件；“导出”才会生成文件。
-          </div>
-        </div>
-      </section>
-    `;
-
-    const productSection = `
-      <section class="card" style="margin-bottom:18px">
-        <div class="card-h"><h3>产品学习中心</h3><p>Thermo 产品学习模块：PCR、NGS、Flow、KingFisher、Orbitrap 等。</p></div>
-        <div class="card-b"><div class="products">${PRODUCTS.map(p => `
-          <div class="product">
-            <div class="img">🧪</div>
-            <h4>${p.name}</h4>
-            <p>${p.desc}</p>
-            <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:12px;color:var(--muted)"><span>掌握度</span><span>${p.progress}%</span></div>
-            <div class="progress-wrap" style="height:8px;margin-top:8px"><div class="progress-fill" style="width:${p.progress}%"></div></div>
-            <div style="margin-top:8px;font-size:12px;color:var(--muted)">${p.modules} 模块</div>
-          </div>`).join('')}</div></div>
-      </section>
-    `;
-
-    const casePaperSection = `
-      <section class="two-col">
-        <div class="card">
-          <div class="card-h">
-            <div class="section-title">
-              <div class="left"><h3>Troubleshooting 库</h3></div>
-              <div class="toolbar"><span class="chip">${filterCount(CASES, state.search)} 条结果</span></div>
-            </div>
-            <p>把常见问题沉淀成可检索的案例库，方便快速定位与复盘。</p>
-          </div>
-          <div class="card-b">
-            <div class="case-grid">
-              ${filterCases(CASES, state.search).map(c => `
-                <div class="case">
-                  <div class="case-top">
-                    <span class="badge blue">${c.tag}</span>
-                    <span class="badge">${c.level}</span>
-                  </div>
-                  <h4>${c.title}</h4>
-                  <p>${c.summary}</p>
-                  <div style="margin-top:10px;font-size:12px;color:var(--muted)">更新于 ${c.date}</div>
-                </div>
-              `).join('') || `<div class="muted">没有找到相关案例。</div>`}
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-h">
-            <h3>文献阅读管理</h3>
-            <p>Nature、Cell、Clinical Cancer Research 等高价值阅读内容。</p>
-          </div>
-          <div class="card-b">
-            <div class="paper-list">
-              ${PAPERS.map(p => `
-                <div class="paper">
-                  <div class="icon-box">📄</div>
-                  <div style="min-width:0;flex:1">
-                    <div class="t1"><span>${p.journal}</span><span>${p.date}</span></div>
-                    <div class="t2">${p.title}</div>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        </div>
-      </section>
-    `;
-
-    let html = dashboardSection;
-    if (state.currentTab === 'home') html += taskSection + productSection + casePaperSection + calendarSection + reportsSection + notesSection;
-    if (state.currentTab === 'daily') html += taskSection + notesSection;
-    if (state.currentTab === 'calendar') html += calendarSection;
-    if (state.currentTab === 'reports') html += reportsSection + calendarSection;
-    if (state.currentTab === 'notes') html += notesSection + calendarSection + reportsSection;
-
-    const content = document.getElementById('content');
-    content.innerHTML = html;
-    bindEvents();
-    renderNav();
+    document.getElementById('noteInput').value = record.note || '';
+    document.getElementById('extraInput').value = record.extraNote || '';
   }
 
-  function bindEvents() {
-    document.querySelectorAll('[data-task]').forEach(btn => {
-      btn.addEventListener('click', () => toggleTask(btn.getAttribute('data-task')));
+  function render() {
+    renderTasks();
+    renderCalendar();
+    renderSummary();
+  }
+
+  function setCurrentNote() {
+    const r = getRecord(todayKey());
+    r.note = document.getElementById('noteInput').value || '';
+    r.extraNote = document.getElementById('extraInput').value || '';
+    state.records[todayKey()] = r;
+  }
+
+  function bindButtons() {
+    document.getElementById('saveBtn').onclick = () => { setCurrentNote(); saveState(); toast('已保存到浏览器本地'); render(); };
+    document.getElementById('saveLocalBtn').onclick = () => { setCurrentNote(); saveState(); toast('已保存到浏览器本地'); render(); };
+
+    document.getElementById('exportMdBtn').onclick = () => exportMarkdown();
+    document.getElementById('exportXlsxBtn').onclick = () => exportExcel();
+    document.getElementById('exportMdBtn2').onclick = () => exportMarkdown();
+    document.getElementById('exportXlsxBtn2').onclick = () => exportExcel();
+    document.getElementById('exportNoteMdBtn').onclick = () => exportMarkdown();
+    document.getElementById('exportNoteXlsxBtn').onclick = () => exportExcel();
+
+    const importInput = document.getElementById('importFile');
+    document.getElementById('importBtn').onclick = () => importInput.click();
+    document.getElementById('importBtn2').onclick = () => importInput.click();
+    importInput.onchange = () => {
+      if (importInput.files && importInput.files[0]) importData(importInput.files[0]);
+      importInput.value = '';
+    };
+
+    document.getElementById('noteInput').addEventListener('input', () => {
+      state.note = document.getElementById('noteInput').value;
+      state.records[todayKey()].note = state.note;
+      saveState();
+      renderSummary();
     });
-
-    const saveLocalBtn = document.getElementById('saveLocalBtn');
-    if (saveLocalBtn) saveLocalBtn.onclick = () => { setCurrentNoteFromUI(); saveLocalOnly(); };
-
-    const importBtn = document.getElementById('importBtn');
-    const importFile = document.getElementById('importFile');
-    if (importBtn && importFile) {
-      importBtn.onclick = () => importFile.click();
-      importFile.onchange = () => {
-        if (importFile.files && importFile.files[0]) importDataFromFile(importFile.files[0]);
-        importFile.value = '';
-      };
-    }
-
-    const exportMdBtn = document.getElementById('exportMdBtn');
-    const exportXlsxBtn = document.getElementById('exportXlsxBtn');
-    const pageExcelBtn = document.getElementById('pageExcelBtn');
-    const exportNoteMdBtn = document.getElementById('exportNoteMdBtn');
-    const exportNoteXlsxBtn = document.getElementById('exportNoteXlsxBtn');
-    if (exportMdBtn) exportMdBtn.onclick = () => { setCurrentNoteFromUI(); exportMarkdown(); };
-    if (exportXlsxBtn) exportXlsxBtn.onclick = () => { setCurrentNoteFromUI(); exportExcel(); };
-    if (pageExcelBtn) pageExcelBtn.onclick = () => { setCurrentNoteFromUI(); exportExcel(); };
-    if (exportNoteMdBtn) exportNoteMdBtn.onclick = () => { setCurrentNoteFromUI(); exportMarkdown(); };
-    if (exportNoteXlsxBtn) exportNoteXlsxBtn.onclick = () => { setCurrentNoteFromUI(); exportExcel(); };
-
-    const noteInput = document.getElementById('noteInput');
-    const extraInput = document.getElementById('extraInput');
-    if (noteInput) noteInput.addEventListener('input', () => { state.note = noteInput.value; state.records[todayKey()] = getDayRecord(todayKey()); state.records[todayKey()].note = state.note; saveState(); });
-    if (extraInput) extraInput.addEventListener('input', () => { state.extraNote = extraInput.value; saveState(); });
-
-    document.querySelectorAll('[data-tab]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        state.currentTab = btn.getAttribute('data-tab');
-        saveState();
-        renderAll();
-      });
+    document.getElementById('extraInput').addEventListener('input', () => {
+      state.extraNote = document.getElementById('extraInput').value;
+      state.records[todayKey()].extraNote = state.extraNote;
+      saveState();
     });
   }
 
-  function renderAll() {
-    document.getElementById('searchInput').value = state.search || '';
-    document.getElementById('searchInput2').value = state.search || '';
-    renderNav();
-    renderContent();
-    const xp = Math.min(1000, computeTotalPoints());
-    document.getElementById('streakValue').textContent = `${computeStreak()} 天`;
-    document.getElementById('xpText').textContent = `${xp} / 1000 XP`;
-    document.getElementById('xpBar').style.width = `${Math.min(100, Math.round(xp / 10))}%`;
+  function init() {
+    if (!state.records[todayKey()]) state.records[todayKey()] = defaultRecord();
+    if (isComplete(getRecord(todayKey()))) completeTodayIfNeeded();
+    saveState();
+    render();
+    bindButtons();
   }
 
-  document.getElementById('menuBtn').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('open');
-    document.getElementById('overlay').classList.toggle('show');
-  });
-  document.getElementById('overlay').addEventListener('click', closeSidebarOnMobile);
-
-  const syncSearch = (val) => { state.search = val; saveState(); renderAll(); };
-  document.getElementById('searchInput').addEventListener('input', e => syncSearch(e.target.value));
-  document.getElementById('searchInput2').addEventListener('input', e => syncSearch(e.target.value));
-
-  window.BioSupportTracker = { get state() { return state; }, saveState, renderAll };
-
-  // initialize current day and ensure record structure
-  getDayRecord(todayKey());
-  saveState();
-  renderAll();
+  init();
 })();
 </script>
 </body>
