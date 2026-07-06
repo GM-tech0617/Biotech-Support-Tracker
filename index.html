@@ -429,17 +429,17 @@
     const STORAGE_KEY = 'bio-support-tracker-html-v1';
 
     const TASKS = [
-      { id: 'paper', label: '阅读一篇论文摘要', minutes: 10, points: 10, pill: '文献阅读', cls: 'blue' },
-      { id: 'product', label: '学习一个产品知识点', minutes: 10, points: 10, pill: '产品学习', cls: 'good' },
-      { id: 'case', label: '分析一个 Troubleshooting Case', minutes: 10, points: 15, pill: '案例分析', cls: 'purple' },
-      { id: 'summary', label: '总结并沉淀到知识库', minutes: 10, points: 20, pill: '知识总结', cls: 'orange' },
+      { id: 'paper', label: '阅读一篇论文摘要', minutes: 10, points: 0, pill: '文献阅读', cls: 'blue' },
+      { id: 'product', label: '学习一个产品知识点', minutes: 10, points: 0, pill: '产品学习', cls: 'good' },
+      { id: 'case', label: '分析一个 Troubleshooting Case', minutes: 10, points: 0, pill: '案例分析', cls: 'purple' },
+      { id: 'summary', label: '总结并沉淀到知识库', minutes: 10, points: 0, pill: '知识总结', cls: 'orange' },
     ];
 
     const defaultState = {
       checked: { paper: true, product: true, case: true, summary: true },
       note: '',
-      streak: 23,
-      points: 650,
+      streak: 0,
+      points: 0,
       weekHistory: [2, 3, 4, 2, 4, 3, 4],
       saveDate: new Date().toISOString().slice(0, 10),
     };
