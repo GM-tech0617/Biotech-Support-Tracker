@@ -305,8 +305,8 @@
 
 <script>
 (() => {
-  const STORAGE_KEY = 'biosupport-tracker-v7';
-  const VERSION = 'v7';
+  const STORAGE_KEY = 'biosupport-tracker-v8';
+  const VERSION = 'v8';
 
   const TASKS = [
     { id:'paper', label:'阅读一篇论文摘要', minutes:10, points:10 },
@@ -563,6 +563,17 @@
 
   function filterCount(items, query) {
     return filterCases(items, query).length;
+  }
+
+
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[ch]));
   }
 
   function renderNav() {
