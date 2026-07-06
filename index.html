@@ -86,6 +86,7 @@
       .task{padding:14px}
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <div class="wrap">
@@ -118,7 +119,8 @@
           </div>
           <div class="actions">
             <button class="btn ghost" id="resetBtn">重置今日</button>
-            <button class="btn primary" id="exportBtn">导出 JSON</button>
+            <button class="btn primary" id="exportMarkdownBtn">保存 Markdown</button>
+            <button class="btn ghost" id="exportExcelBtn">导出 Excel</button>
           </div>
         </div>
       </section>
@@ -176,14 +178,14 @@
           <div class="actions">
             <button class="btn primary" id="saveBtn">保存笔记</button>
           </div>
-          <div class="footer-note">内容会自动保存在浏览器本地；导出 JSON 可作为备份或迁移使用。</div>
+          <div class="footer-note">内容会自动保存在浏览器本地；可导出 Markdown 和 Excel 作为备份或分享。</div>
         </div>
       </section>
     </div>
   </div>
 
   <script>
-    const STORAGE_KEY = 'biosupport-tracker-v3';
+    const STORAGE_KEY = 'biosupport-tracker-v4';
     const TASKS = [
       { id:'paper', label:'阅读一篇论文摘要', minutes:10, points:10, tag:'文献阅读', cls:'blue' },
       { id:'product', label:'学习一个产品知识点', minutes:10, points:10, tag:'产品学习', cls:'green' },
@@ -196,7 +198,7 @@
       streak: 0,
       points: 0,
       note: '',
-      weekHistory: [2, 3, 4, 2, 4, 3, 4],
+      weekHistory: [0, 0, 0, 0, 0, 0, 0],
       lastSavedAt: new Date().toISOString().slice(0,10),
       firstUseDate: new Date().toISOString().slice(0,10),
       completedDays: 0
@@ -219,14 +221,108 @@
       return new Date().toISOString().slice(0,10);
     }
 
+    function pad2(n){ return String(n).padStart(2,'0'); }
+
+    function formatDate(date = new Date()){
+      return `${date.getFullYear()}-${pad2(date.getMonth()+1)}-${pad2(date.getDate())}`;
+    }
+
+    function escapeMarkdown(text = ''){
+      return String(text).replace(/\r/g, '');
+    }
+
+    function buildMarkdown(){
+      const completed = TASKS.filter(t => !!state.checked[t.id]);
+      const completedCount = completed.length;
+      const progress = Math.round(completedCount / TASKS.length * 100);
+      const lines = [];
+      lines.push('# BioSupport Tracker');
+      lines.push('');
+      lines.push(`- 日期：${todayKey()}`);
+      lines.push(`- 连续打卡：${state.streak} 天`);
+      lines.push(`- 积分：${state.points}`);
+      lines.push(`- 今日完成：${completedCount}/${TASKS.length} (${progress}%)`);
+      lines.push(`- 首次使用：${state.firstUseDate}`);
+      lines.push(`- 已完成天数：${state.completedDays || 0}`);
+      lines.push('');
+      lines.push('## 每日 4 项学习打卡');
+      lines.push('');
+      TASKS.forEach(task => {
+        const checked = state.checked[task.id] ? 'x' : ' ';
+        lines.push(`- [${checked}] ${task.label}（${task.minutes} min，+${task.points} 分）`);
+      });
+      lines.push('');
+      lines.push('## 今日收获记录');
+      lines.push('');
+      lines.push(escapeMarkdown(note.value || '').trim() || '（空）');
+      lines.push('');
+      lines.push('## 每周完成情况');
+      lines.push('');
+      lines.push('| 周次 | 完成数 |');
+      lines.push('| --- | ---: |');
+      state.weekHistory.forEach((v, i) => {
+        lines.push(`| 周${i + 1} | ${v} |`);
+      });
+      lines.push('');
+      lines.push('## 备注');
+      lines.push('');
+      lines.push('- 本文件由 BioSupport Tracker 自动生成');
+      lines.push('- 可在 Notion / Obsidian / VS Code / GitHub 中直接打开');
+      lines.push('');
+      return lines.join('\n');
+    }
+
+    function downloadText(filename, content, type = 'text/markdown;charset=utf-8'){
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function buildExcelWorkbook(){
+      if (typeof XLSX === 'undefined') {
+        alert('Excel 导出库尚未加载完成，请稍后再试。');
+        return null;
+      }
+      const summaryRows = [
+        ['日期', todayKey()],
+        ['连续打卡', `${state.streak} 天`],
+        ['积分', state.points],
+        ['今日完成', `${TASKS.filter(t => !!state.checked[t.id]).length}/${TASKS.length}`],
+        ['首次使用', state.firstUseDate],
+        ['已完成天数', state.completedDays || 0],
+        ['今日收获', note.value || ''],
+      ];
+      const tasksRows = TASKS.map(task => ({
+        项目: task.label,
+        分钟: task.minutes,
+        积分: task.points,
+        完成: state.checked[task.id] ? '是' : '否',
+        分类: task.tag,
+      }));
+      const weekRows = state.weekHistory.map((v, i) => ({ 周次: `周${i + 1}`, 完成数: v }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['字段', '值'], ...summaryRows]), 'Summary');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tasksRows), 'Daily Tasks');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(weekRows), 'Weekly Progress');
+      return wb;
+    }
+
     const state = readState();
     const today = todayKey();
 
-    // Ensure the tracker starts from zero in the UI and uses today's date as the first day.
+    // Start from a clean zero state, but preserve previously entered note if needed.
     state.streak = Number(state.streak || 0);
     state.points = Number(state.points || 0);
+    state.completedDays = Number(state.completedDays || 0);
     state.lastSavedAt = state.lastSavedAt || today;
     if (!state.firstUseDate) state.firstUseDate = today;
+    if (!Array.isArray(state.weekHistory) || state.weekHistory.length !== 7) {
+      state.weekHistory = [0, 0, 0, 0, 0, 0, 0];
+    }
     writeState();
 
     const taskContainer = document.getElementById('tasks');
@@ -295,7 +391,6 @@
       state.checked[id] = !state.checked[id];
       state.points = Math.max(0, Number(state.points || 0) + (state.checked[id] ? task.points : -task.points));
       if (Object.values(state.checked).every(Boolean)) {
-        // Count one completed day only when all 4 items are checked.
         state.streak = Math.max(0, Number(state.streak || 0)) + 1;
         state.completedDays = (state.completedDays || 0) + 1;
       }
@@ -320,28 +415,22 @@
 
     document.getElementById('saveBtn').addEventListener('click', () => {
       save();
-      alert('笔记已保存到浏览器本地。');
+      const markdown = buildMarkdown();
+      downloadText(`biosupport-tracker-${today}.md`, markdown, 'text/markdown;charset=utf-8');
+      alert('已保存并导出 Markdown。');
     });
 
-    document.getElementById('exportBtn').addEventListener('click', () => {
+    document.getElementById('exportMarkdownBtn').addEventListener('click', () => {
       save();
-      const payload = {
-        date: today,
-        streak: state.streak,
-        points: state.points,
-        checked: state.checked,
-        note: state.note,
-        weekHistory: state.weekHistory,
-        firstUseDate: state.firstUseDate,
-        completedDays: state.completedDays,
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `biosupport-tracker-${today}.json`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const markdown = buildMarkdown();
+      downloadText(`biosupport-tracker-${today}.md`, markdown, 'text/markdown;charset=utf-8');
+    });
+
+    document.getElementById('exportExcelBtn').addEventListener('click', () => {
+      save();
+      const wb = buildExcelWorkbook();
+      if (!wb) return;
+      XLSX.writeFile(wb, `biosupport-tracker-${today}.xlsx`);
     });
 
     note.addEventListener('input', save);
