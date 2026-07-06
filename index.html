@@ -1,443 +1,1302 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BioSupport Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root{
-      --bg:#f4f7fb; --panel:rgba(255,255,255,.88); --panel-strong:#fff; --line:#dbe5f1; --text:#0f172a; --muted:#64748b;
-      --brand1:#0f4c81; --brand2:#5b2be0; --brand3:#2563eb; --good:#16a34a; --accent:#f59e0b; --shadow:0 18px 40px rgba(15,23,42,.10);
+      --bg1:#f5f8ff;
+      --bg2:#eef4ff;
+      --panel:rgba(255,255,255,.92);
+      --panel-strong:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line:#dbe5f1;
+      --brand:#1d4ed8;
+      --brand2:#7c3aed;
+      --good:#16a34a;
+      --warn:#f59e0b;
+      --bad:#dc2626;
+      --shadow:0 18px 45px rgba(15,23,42,.08);
       --radius:24px;
     }
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:
-      radial-gradient(circle at top left, rgba(37,99,235,.10), transparent 30%),
-      radial-gradient(circle at top right, rgba(91,43,224,.10), transparent 35%),
-      linear-gradient(180deg,#f7fbff 0%,#f4f7fb 100%);
-      color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;}
-    body{min-height:100vh}
-    .wrap{max-width:1180px;margin:0 auto;padding:24px}
-    .hero{border:1px solid rgba(255,255,255,.65);background:linear-gradient(135deg, #0b4aa0 0%, #2151cf 42%, #6a38e6 100%);color:#fff;border-radius:32px;padding:34px 30px 28px;box-shadow:var(--shadow);position:relative;overflow:hidden}
-    .hero:before{content:"";position:absolute;inset:auto -10% -30% auto;width:360px;height:360px;background:radial-gradient(circle, rgba(255,255,255,.16), transparent 60%);filter:blur(8px)}
-    .eyebrow{font-size:14px;opacity:.86;letter-spacing:.02em}
-    h1{margin:10px 0 12px;font-size:clamp(32px,4.2vw,56px);line-height:1.03;letter-spacing:-.03em}
-    .sub{max-width:900px;font-size:16px;line-height:1.8;opacity:.95;margin:0}
-    .stats{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px;position:relative;z-index:1}
-    .pill{display:inline-flex;align-items:center;gap:10px;padding:16px 20px;border-radius:999px;background:rgba(255,255,255,.14);backdrop-filter:blur(14px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.10);font-weight:700;font-size:18px}
-    .pill small{font-weight:600;opacity:.88}
-    .pill strong{font-size:22px}
-    .layout{display:grid;grid-template-columns:1.55fr .95fr;gap:18px;margin-top:18px}
-    .card{background:var(--panel);backdrop-filter:blur(16px);border:1px solid rgba(219,229,241,.95);border-radius:var(--radius);box-shadow:var(--shadow)}
-    .card h2{margin:0;font-size:20px;letter-spacing:-.02em}
-    .card .hd{padding:20px 22px 0}
-    .card .bd{padding:18px 22px 22px}
-    .muted{color:var(--muted)}
-    .checklist{display:grid;gap:10px;margin-top:16px}
-    .task{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px;border:1px solid var(--line);border-radius:18px;background:var(--panel-strong);cursor:pointer;transition:.18s ease}
-    .task:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(15,23,42,.06)}
-    .task.on{border-color:#bfd2ff;background:#eff6ff}
-    .task .left{display:flex;align-items:flex-start;gap:12px}
-    .check{flex:none;width:24px;height:24px;border-radius:999px;border:2px solid #c7d2e2;display:grid;place-items:center;background:#fff;color:#fff;font-size:14px;font-weight:900}
-    .task.on .check{background:#1d4ed8;border-color:#1d4ed8}
-    .t-title{font-weight:700}
-    .t-meta{font-size:12px;color:var(--muted);margin-top:4px}
-    .tag{padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:#f8fbff;font-size:12px;font-weight:700;color:#475569;white-space:nowrap}
-    .tag.green{background:#ecfdf5;border-color:#bbf7d0;color:#166534}
-    .tag.blue{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
-    .tag.purple{background:#f5f3ff;border-color:#ddd6fe;color:#6d28d9}
-    .tag.orange{background:#fff7ed;border-color:#fed7aa;color:#c2410c}
-    .progress-wrap{height:12px;border-radius:999px;background:#eaf0f7;overflow:hidden}
-    .progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--brand3),var(--brand2))}
-    .mini-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-    .mini{border:1px solid var(--line);border-radius:18px;padding:16px;background:#fff}
-    .mini .lbl{font-size:12px;color:var(--muted)}
-    .mini .big{margin-top:8px;font-size:26px;font-weight:800;letter-spacing:-.02em}
-    .mini .small{margin-top:6px;color:var(--muted);font-size:12px}
-    .bar-chart{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;align-items:end;margin-top:14px}
-    .bar-item{display:flex;flex-direction:column;align-items:center;gap:8px}
-    .bar-box{width:100%;height:150px;display:flex;align-items:flex-end;background:#f6f9fd;border-radius:18px;border:1px solid var(--line);padding:8px}
-    .bar{width:100%;border-radius:14px;background:linear-gradient(180deg,var(--brand2),var(--brand3))}
-    .bar-label{font-size:12px;color:var(--muted)}
-    textarea{width:100%;min-height:170px;resize:vertical;border:1px solid var(--line);border-radius:18px;padding:16px;font:inherit;outline:none;background:#fff}
-    textarea:focus{border-color:#9fc0ff;box-shadow:0 0 0 4px rgba(37,99,235,.08)}
-    .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
-    .btn{border:0;border-radius:14px;padding:12px 16px;font:inherit;font-weight:800;cursor:pointer;transition:.18s ease}
-    .btn:hover{transform:translateY(-1px)}
-    .btn.primary{background:linear-gradient(90deg,var(--brand3),var(--brand2));color:#fff}
-    .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--text)}
-    .footer-note{margin-top:14px;padding:14px 16px;border-radius:18px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:13px;line-height:1.6}
-    .grid2{display:grid;grid-template-columns:1.35fr .85fr;gap:18px;margin-top:18px}
-    .status{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
-    .status .tag{font-size:13px}
-    .dot{width:10px;height:10px;border-radius:999px;background:var(--good);display:inline-block}
-    @media (max-width: 960px){
-      .layout,.grid2{grid-template-columns:1fr}
-      .mini-stats{grid-template-columns:repeat(2,1fr)}
-      .bar-chart{grid-template-columns:repeat(7,minmax(0,1fr))}
+    html,body{margin:0;padding:0}
+    body{
+      min-height:100vh;
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(59,130,246,.12), transparent 26%),
+        radial-gradient(circle at top right, rgba(124,58,237,.10), transparent 28%),
+        linear-gradient(135deg, var(--bg1), #f8fbff 45%, #f5f8ff);
     }
-    @media (max-width: 640px){
-      .wrap{padding:14px}
-      .hero{padding:24px 18px 20px;border-radius:26px}
-      .pill{font-size:16px;padding:14px 16px}
-      .pill strong{font-size:18px}
-      .mini-stats{grid-template-columns:1fr}
-      .bar-box{height:128px}
-      .task{padding:14px}
+    a{color:inherit}
+    .app{max-width:1440px;margin:0 auto;display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+    .sidebar{
+      position:sticky;top:0;height:100vh;
+      padding:22px 18px;
+      background:linear-gradient(180deg,#081f42 0%, #0b2c5f 100%);
+      color:#fff;
+      box-shadow:inset -1px 0 0 rgba(255,255,255,.06);
+      display:flex;flex-direction:column;gap:16px;
+    }
+    .brand{
+      display:flex;gap:12px;align-items:center;padding:4px 4px 10px 4px;
+    }
+    .logo{
+      width:46px;height:46px;border-radius:18px;
+      display:grid;place-items:center;
+      background:rgba(255,255,255,.12);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+      font-size:22px;
+    }
+    .brand h1{margin:0;font-size:20px;line-height:1.1}
+    .brand p{margin:4px 0 0;font-size:12px;opacity:.72}
+    .side-card{
+      border-radius:22px;
+      padding:18px;
+      background:rgba(255,255,255,.08);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+    }
+    .side-card .small{font-size:12px;opacity:.72}
+    .side-card .big{font-size:30px;font-weight:800;margin-top:6px;line-height:1}
+    .side-card .row{display:flex;justify-content:space-between;gap:10px;font-size:12px;opacity:.78;margin-top:14px}
+    .xpbar{height:8px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:8px}
+    .xpbar > div{height:100%;width:0;background:linear-gradient(90deg,#22c55e,#38bdf8);border-radius:999px}
+    .nav{display:flex;flex-direction:column;gap:8px;flex:1}
+    .nav button{
+      border:0;cursor:pointer;
+      background:transparent;color:rgba(255,255,255,.80);
+      padding:14px 14px;border-radius:18px;
+      display:flex;align-items:center;gap:12px;
+      text-align:left;font-size:14px;font-weight:600;
+      transition:.2s ease;
+    }
+    .nav button:hover,.nav button.active{background:rgba(255,255,255,.12);color:#fff}
+    .quote{
+      margin-top:auto;
+      border-radius:22px;padding:16px 18px;
+      background:rgba(255,255,255,.06);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
+      font-size:13px;line-height:1.6;opacity:.92;
+    }
+    .main{min-width:0}
+    .topbar{
+      position:sticky;top:0;z-index:20;
+      backdrop-filter:blur(20px);
+      background:rgba(246,249,253,.84);
+      border-bottom:1px solid rgba(219,229,241,.9);
+    }
+    .topbar-inner{
+      padding:18px 26px;
+      display:flex;align-items:center;gap:16px;
+    }
+    .menu{
+      display:none;border:1px solid var(--line);background:#fff;border-radius:14px;padding:10px 12px;cursor:pointer
+    }
+    .welcome{flex:1}
+    .welcome h2{margin:0;font-size:20px}
+    .welcome p{margin:4px 0 0;color:var(--muted);font-size:13px}
+    .search{
+      flex:0 1 460px;
+      display:flex;align-items:center;gap:10px;
+      border:1px solid var(--line);
+      background:#fff;border-radius:18px;padding:12px 14px;
+      box-shadow:0 3px 16px rgba(15,23,42,.04);
+    }
+    .search input{border:0;outline:none;background:transparent;width:100%;font-size:14px}
+    .user{
+      display:flex;align-items:center;gap:12px;
+      padding:10px 12px;border:1px solid var(--line);
+      background:#fff;border-radius:18px;box-shadow:0 3px 16px rgba(15,23,42,.04);
+    }
+    .avatar{
+      width:42px;height:42px;border-radius:50%;
+      background:linear-gradient(135deg,#3b82f6,#8b5cf6);
+      display:grid;place-items:center;color:#fff;font-weight:800
+    }
+    .u-name{font-size:13px;font-weight:700}
+    .u-role{font-size:12px;color:var(--muted)}
+    .mobile-search{display:none;padding:0 16px 14px}
+    .content{padding:22px 26px 28px}
+    .grid-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px}
+    .card{
+      background:var(--panel);
+      border:1px solid rgba(219,229,241,.88);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .stat{padding:18px}
+    .stat .row{display:flex;justify-content:space-between;gap:10px}
+    .stat .k{font-size:13px;color:var(--muted)}
+    .stat .v{font-size:30px;font-weight:800;line-height:1.1;margin-top:10px}
+    .section-grid{display:grid;grid-template-columns:1.2fr .9fr;gap:18px;margin-bottom:18px}
+    .two-col{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;margin-bottom:18px}
+    .card-h{padding:20px 20px 0}
+    .card-h h3{margin:0;font-size:20px}
+    .card-h p{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.55}
+    .card-b{padding:18px 20px 20px}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .chip{
+      display:inline-flex;align-items:center;gap:8px;
+      border:1px solid var(--line);background:#f8fbff;
+      border-radius:999px;padding:8px 12px;font-size:12px;color:#3b4a7a
+    }
+    .btn{
+      border:0;cursor:pointer;font:inherit;
+      border-radius:16px;padding:12px 16px;font-weight:700;
+      transition:.18s ease;
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn.primary{background:linear-gradient(90deg,var(--brand),var(--brand2));color:#fff}
+    .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--text)}
+    .btn.soft{background:#eef4ff;border:1px solid #d5e2ff;color:#1d4ed8}
+    .btn.good{background:#ecfdf5;border:1px solid #bbf7d0;color:#166534}
+    .btn.warn{background:#fff7ed;border:1px solid #fed7aa;color:#b45309}
+    .btn.small{padding:10px 12px;border-radius:14px;font-size:13px}
+    .progress-wrap{height:10px;background:#edf3fb;border-radius:999px;overflow:hidden}
+    .progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+    .task-list{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+    .task{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      padding:14px 14px;border-radius:18px;border:1px solid var(--line);
+      cursor:pointer;background:#fff;transition:.18s ease;
+    }
+    .task:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(15,23,42,.06)}
+    .task.locked{cursor:default;opacity:.95}
+    .task.active{background:#eff6ff;border-color:#bfdbfe}
+    .task .left{display:flex;align-items:flex-start;gap:12px;min-width:0}
+    .check{
+      width:22px;height:22px;border-radius:999px;border:2px solid #cbd5e1;
+      display:grid;place-items:center;flex:none;background:#fff;color:#fff;font-size:13px
+    }
+    .task.active .check{background:#2563eb;border-color:#2563eb}
+    .task .title{font-weight:700}
+    .task .meta{font-size:12px;color:var(--muted);margin-top:3px}
+    .badge{
+      padding:6px 10px;border-radius:999px;font-size:12px;border:1px solid var(--line);
+      background:#f8fafc;color:#475569;white-space:nowrap
+    }
+    .badge.good{background:#ecfdf5;border-color:#bbf7d0;color:#166534}
+    .badge.blue{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+    .badge.orange{background:#fff7ed;border-color:#fed7aa;color:#c2410c}
+    .badge.purple{background:#f5f3ff;border-color:#ddd6fe;color:#6d28d9}
+    .mini-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    .mini{
+      border:1px solid var(--line);border-radius:18px;padding:15px;
+      background:linear-gradient(180deg,#fff,#fbfdff)
+    }
+    .mini .lbl{font-size:12px;color:var(--muted)}
+    .mini .big{margin-top:8px;font-size:22px;font-weight:800}
+    .mini .bar{height:8px;background:#edf3fb;border-radius:999px;overflow:hidden;margin-top:10px}
+    .mini .bar>div{height:100%;border-radius:999px}
+    .mini-note{margin-top:8px;font-size:12px;color:var(--muted)}
+    .calendar{
+      display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:14px
+    }
+    .day{
+      aspect-ratio:1/1;
+      border-radius:14px;border:1px solid var(--line);
+      background:#f8fafc;
+      padding:8px;display:flex;flex-direction:column;justify-content:space-between;
+      font-size:11px;color:var(--muted)
+    }
+    .day .num{font-weight:700;color:#0f172a}
+    .day.done{background:#e0f2fe;border-color:#bae6fd}
+    .day.partial{background:#eff6ff;border-color:#bfdbfe}
+    .day.none{opacity:.62}
+    .day.today{box-shadow:inset 0 0 0 2px rgba(29,78,216,.24)}
+    .roadmap{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .step{border:1px solid var(--line);border-radius:20px;padding:16px;background:#fff}
+    .step.active{background:#eff6ff;border-color:#bfdbfe}
+    .step h4{margin:0;font-size:16px}
+    .step .lvl{margin-top:4px;font-size:12px;color:var(--muted)}
+    .step ul{margin:14px 0 0;padding:0 0 0 18px;color:#475569;line-height:1.7;font-size:13px}
+    .products{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+    .product{
+      border:1px solid var(--line);border-radius:22px;padding:16px;background:#fff;
+      min-height:210px
+    }
+    .product .img{
+      height:86px;border-radius:18px;background:linear-gradient(180deg,#f8fbff,#edf3fb);
+      border:1px solid #e5edf8;display:grid;place-items:center;font-size:34px;margin-bottom:12px
+    }
+    .product h4{margin:0;font-size:16px}
+    .product p{margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.6}
+    .case-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    .case{border:1px solid var(--line);border-radius:20px;padding:16px;background:#fff}
+    .case-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .case h4{margin:10px 0 0;font-size:16px}
+    .case p{margin:8px 0 0;color:var(--muted);font-size:13px;line-height:1.6}
+    .paper-list{display:flex;flex-direction:column;gap:10px}
+    .paper{
+      display:flex;gap:12px;align-items:center;border:1px solid var(--line);
+      background:#fff;border-radius:18px;padding:12px
+    }
+    .paper .icon-box{
+      width:48px;height:48px;border-radius:16px;background:#eef4ff;
+      display:grid;place-items:center;font-size:20px;color:#2563eb;flex:none
+    }
+    .paper .t1{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:10px}
+    .paper .t2{margin-top:4px;font-size:14px;font-weight:700;line-height:1.4}
+    .fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}
+    .field textarea,.field input{
+      width:100%;padding:14px;border-radius:18px;border:1px solid var(--line);
+      outline:none;resize:vertical;font:inherit;background:#fff
+    }
+    .field textarea{min-height:120px}
+    .footer-note{
+      margin-top:16px;padding:14px 16px;border-radius:18px;background:#fff7ed;
+      border:1px solid #fed7aa;color:#9a3412;font-size:13px;line-height:1.65
+    }
+    .report-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    .report-box{
+      border:1px solid var(--line);border-radius:18px;padding:16px;background:linear-gradient(180deg,#fff,#fbfdff)
+    }
+    .report-box h4{margin:0 0 8px;font-size:16px}
+    .report-box .desc{font-size:13px;color:var(--muted);line-height:1.6}
+    .report-box .score{margin-top:12px;font-size:28px;font-weight:800}
+    .toast{
+      position:fixed;right:18px;bottom:18px;z-index:50;
+      background:#0f172a;color:#fff;padding:12px 14px;border-radius:14px;
+      box-shadow:0 14px 40px rgba(15,23,42,.2);opacity:0;transform:translateY(12px);
+      pointer-events:none;transition:.25s ease;font-size:13px
+    }
+    .toast.show{opacity:1;transform:none}
+    .overlay{
+      display:none;position:fixed;inset:0;background:rgba(15,23,42,.38);z-index:30
+    }
+    .overlay.show{display:block}
+    .muted{color:var(--muted)}
+    .section-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .section-title .left{display:flex;align-items:center;gap:10px}
+    .tiny{font-size:12px;color:var(--muted)}
+    .sep{height:1px;background:#eef2f7;margin:16px 0}
+    .hidden{display:none !important}
+
+    @media (max-width: 1280px){
+      .grid-stats,.mini-grid,.products,.report-grid{grid-template-columns:repeat(2,1fr)}
+      .section-grid,.two-col,.roadmap,.fields{grid-template-columns:1fr}
+      .case-grid{grid-template-columns:1fr}
+    }
+    @media (max-width: 880px){
+      .app{grid-template-columns:1fr}
+      .sidebar{
+        position:fixed;left:-300px;top:0;z-index:40;transition:.24s ease;width:280px
+      }
+      .sidebar.open{left:0}
+      .menu{display:inline-flex}
+      .topbar-inner{padding:14px 16px}
+      .content{padding:14px 16px 22px}
+      .mobile-search{display:block}
+      .welcome{display:none}
+      .user .u-meta{display:none}
+      .grid-stats,.mini-grid,.products{grid-template-columns:1fr}
+      .calendar{gap:6px}
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-  <div class="wrap">
-    <section class="hero">
-      <div class="eyebrow">BioSupport Tracker</div>
-      <h1>每日 40 分钟，持续积累</h1>
-      <p class="sub">只保留你每天真正会用到的内容：每日 4 项学习打卡、连续打卡与积分、每周完成情况、今日收获记录、本地保存与导出。</p>
-      <div class="stats">
-        <div class="pill"><span>🔥</span><small>连续打卡</small><strong id="streakText">0</strong><small>天</small></div>
-        <div class="pill"><span>⭐</span><small>积分</small><strong id="pointsText">0</strong></div>
-        <div class="pill"><span>📅</span><small>更新于</small><strong id="todayText"></strong></div>
+  <div class="overlay" id="overlay"></div>
+  <div class="toast" id="toast"></div>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="logo">🧬</div>
+        <div>
+          <h1>BioSupport</h1>
+          <p>Learn · Solve · Grow</p>
+        </div>
       </div>
-    </section>
 
-    <div class="layout">
-      <section class="card">
-        <div class="hd">
-          <h2>每日 4 项学习打卡</h2>
-          <p class="muted">完成后会自动计入积分；全部完成后，可作为当天打卡记录。</p>
-        </div>
-        <div class="bd">
-          <div id="tasks" class="checklist"></div>
-          <div style="margin-top:16px" class="card" >
-            <div class="bd" style="padding:16px">
-              <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;font-weight:700">
-                <span>今日完成进度</span><span id="progressText">0%</span>
-              </div>
-              <div class="progress-wrap" style="margin-top:10px"><div id="progressFill" class="progress-fill" style="width:0%"></div></div>
+      <div class="side-card">
+        <div class="small">连续打卡</div>
+        <div class="big" id="streakValue">0 天</div>
+        <div class="row"><span>Lv. 12 技术支持专家</span><span id="xpText">0 / 1000 XP</span></div>
+        <div class="xpbar"><div id="xpBar"></div></div>
+      </div>
+
+      <nav class="nav" id="nav"></nav>
+
+      <div class="quote">“持续学习，是成为专家的最快路径。”<br/>— BioSupport Tracker</div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="topbar-inner">
+          <button class="menu" id="menuBtn">☰</button>
+          <div class="welcome">
+            <h2>欢迎回来</h2>
+            <p>把工作间隙的 40 分钟，变成可沉淀的成长资产。</p>
+          </div>
+          <div class="search">
+            <span>🔎</span>
+            <input id="searchInput" placeholder="搜索产品、案例、文献、笔记..." />
+          </div>
+          <div class="user">
+            <div class="avatar">GM</div>
+            <div class="u-meta">
+              <div class="u-name">Grace Ma</div>
+              <div class="u-role">Technical Support</div>
             </div>
           </div>
-          <div class="actions">
-            <button class="btn ghost" id="resetBtn">重置今日</button>
-            <button class="btn primary" id="exportMarkdownBtn">保存 Markdown</button>
-            <button class="btn ghost" id="exportExcelBtn">导出 Excel</button>
-          </div>
         </div>
-      </section>
+      </div>
 
-      <aside class="card">
-        <div class="hd">
-          <h2>连续打卡与积分</h2>
-          <p class="muted">记录当前状态，并保存在浏览器本地。</p>
+      <div class="mobile-search">
+        <div class="search" style="max-width:none">
+          <span>🔎</span>
+          <input id="searchInput2" placeholder="搜索产品、案例、文献、笔记..." />
         </div>
-        <div class="bd">
-          <div class="mini-stats">
-            <div class="mini">
-              <div class="lbl">连续打卡</div>
-              <div class="big" id="streakMini">0 天</div>
-              <div class="small">从今天开始的第 1 天</div>
-            </div>
-            <div class="mini">
-              <div class="lbl">累计积分</div>
-              <div class="big" id="pointsMini">0</div>
-              <div class="small">完成打卡后自动累加</div>
-            </div>
-          </div>
-          <div class="status">
-            <span class="tag green"><span class="dot"></span>&nbsp;本地自动保存</span>
-            <span class="tag blue">GitHub Pages 可直接用</span>
-          </div>
-          <div class="mini" style="margin-top:12px">
-            <div class="lbl">今日完成</div>
-            <div class="big" id="doneCount">0 / 4</div>
-            <div class="small">完成全部四项后会累计积分</div>
-          </div>
-          <div class="footer-note">如果你刚开始使用，这里的连续打卡与积分都已清零，会从今天作为第 1 天开始。</div>
-        </div>
-      </aside>
-    </div>
+      </div>
 
-    <div class="grid2">
-      <section class="card">
-        <div class="hd">
-          <h2>每周完成情况</h2>
-          <p class="muted">展示最近 7 天的完成趋势，方便快速查看坚持情况。</p>
-        </div>
-        <div class="bd">
-          <div id="bars" class="bar-chart"></div>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="hd">
-          <h2>今日收获记录</h2>
-          <p class="muted">写下今天最重要的一句话，形成你的个人知识库。</p>
-        </div>
-        <div class="bd">
-          <textarea id="note" placeholder="例如：KingFisher 的乙醇残留会影响 PCR 扩增。"></textarea>
-          <div class="actions">
-            <button class="btn primary" id="saveBtn">保存笔记</button>
-          </div>
-          <div class="footer-note">内容会自动保存在浏览器本地；可导出 Markdown 和 Excel 作为备份或分享。</div>
-        </div>
-      </section>
-    </div>
+      <div class="content" id="content"></div>
+    </main>
   </div>
 
-  <script>
-    const STORAGE_KEY = 'biosupport-tracker-v4';
-    const TASKS = [
-      { id:'paper', label:'阅读一篇论文摘要', minutes:10, points:10, tag:'文献阅读', cls:'blue' },
-      { id:'product', label:'学习一个产品知识点', minutes:10, points:10, tag:'产品学习', cls:'green' },
-      { id:'case', label:'分析一个 Troubleshooting Case', minutes:10, points:15, tag:'案例分析', cls:'purple' },
-      { id:'summary', label:'总结并沉淀到知识库', minutes:10, points:20, tag:'知识总结', cls:'orange' },
+<script>
+(() => {
+  const STORAGE_KEY = 'biosupport-tracker-v6';
+  const VERSION = 'v6';
+  const TASKS = [
+    { id:'paper', label:'阅读一篇论文摘要', minutes:10, points:10 },
+    { id:'product', label:'学习一个产品知识点', minutes:10, points:10 },
+    { id:'case', label:'分析一个 Troubleshooting Case', minutes:10, points:15 },
+    { id:'summary', label:'总结并沉淀到知识库', minutes:10, points:5 },
+  ];
+  const NAV = [
+    { key:'home', label:'首页', icon:'🏠' },
+    { key:'daily', label:'每日打卡', icon:'📅' },
+    { key:'products', label:'产品学习', icon:'🔬' },
+    { key:'cases', label:'Troubleshooting 库', icon:'🧰' },
+    { key:'papers', label:'文献管理', icon:'📚' },
+    { key:'roadmap', label:'成长路线', icon:'📈' },
+    { key:'notes', label:'今日收获', icon:'📝' },
+  ];
+  const PRODUCTS = [
+    { name:'PCR / qPCR', progress:80, modules:'8/10', desc:'基础原理、标准曲线、熔解曲线与常见失败原因' },
+    { name:'NGS', progress:65, modules:'13/20', desc:'文库构建、上机、质控与常见排障' },
+    { name:'Flow Cytometry', progress:70, modules:'7/10', desc:'补偿、门控、抗体选择与仪器维护' },
+    { name:'KingFisher', progress:75, modules:'6/8', desc:'磁珠提取、样本纯化、污染与回收率优化' },
+    { name:'Orbitrap MS', progress:60, modules:'9/15', desc:'蛋白质组、扫描模式、参数设置与数据分析' },
+  ];
+  const CASES = [
+    { tag:'qPCR', title:'Ct 值异常偏高或无扩增', date:'2024-05-20', level:'高频问题', summary:'排查模板质量、引物设计、反应体系、退火温度和污染可能。' },
+    { tag:'NGS', title:'文库主峰异常或无有效数据', date:'2024-05-18', level:'中等频率', summary:'重点关注片段分布、接头连接效率、定量偏差和测序指标。' },
+    { tag:'Flow', title:'信号弱或背景高', date:'2024-05-16', level:'高频问题', summary:'检查补偿、PMT、染色条件、洗涤步骤和细胞状态。' },
+    { tag:'KingFisher', title:'提取产量低', date:'2024-05-15', level:'中等频率', summary:'关注磁珠混匀、洗涤次数、样本输入量和乙醇残留。' },
+  ];
+  const PAPERS = [
+    { journal:'Nature', title:'Single-cell multiomic analysis of human tissues', date:'2024-05-20' },
+    { journal:'Cell', title:'Spatial multi-omics sequencing of cancer ecosystems', date:'2024-05-19' },
+    { journal:'Clinical Cancer Research', title:'A comprehensive review of liquid biopsy', date:'2024-05-18' },
+  ];
+  const ROADMAP = [
+    { stage:'Technical Support', level:'Lv.1 - Lv.2', items:['掌握基础产品原理','能完成标准问答','建立 FAQ 与 SOP 框架'] },
+    { stage:'Senior TS', level:'Lv.3 - Lv.4', items:['独立分析复杂案例','能做方案设计与培训','提升跨团队协作能力'] },
+    { stage:'Application Scientist', level:'Lv.5 - Lv.6', items:['输出应用方案与内容','支持重点客户与项目','形成可复用的方法论'] },
+  ];
+
+  const defaultState = () => ({
+    version: VERSION,
+    currentTab: 'home',
+    search: '',
+    currentDate: localDateKey(new Date()),
+    lastCheckinDate: null,
+    completedDates: [],
+    records: {},
+    streak: 0,
+    points: 0,
+    dailyPointsHistory: [],
+    note: '',
+    taskDraft: { paper:false, product:false, case:false, summary:false },
+    importedAt: null,
+    lastExportAt: null
+  });
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return defaultState();
+      const parsed = JSON.parse(raw);
+      return normalizeState(parsed);
+    }catch{
+      return defaultState();
+    }
+  }
+
+  function normalizeState(s){
+    const base = defaultState();
+    const out = Object.assign(base, s || {});
+    out.version = VERSION;
+    out.search = out.search || '';
+    out.currentDate = localDateKey(new Date());
+    out.records = out.records && typeof out.records === 'object' ? out.records : {};
+    out.completedDates = Array.isArray(out.completedDates) ? out.completedDates : [];
+    out.taskDraft = Object.assign({ paper:false, product:false, case:false, summary:false }, out.taskDraft || {});
+    out.note = out.note || '';
+    out.lastCheckinDate = out.lastCheckinDate || null;
+    out.dailyPointsHistory = Array.isArray(out.dailyPointsHistory) ? out.dailyPointsHistory : [];
+    recalcSummary(out);
+    return out;
+  }
+
+  function saveState(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function toast(msg){
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => el.classList.remove('show'), 1800);
+  }
+
+  function localDateKey(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function parseDateKey(key){
+    const [y,m,d] = key.split('-').map(Number);
+    return new Date(y, m-1, d);
+  }
+
+  function prevDateKey(key){
+    const d = parseDateKey(key);
+    d.setDate(d.getDate()-1);
+    return localDateKey(d);
+  }
+
+  function nextDateKey(key){
+    const d = parseDateKey(key);
+    d.setDate(d.getDate()+1);
+    return localDateKey(d);
+  }
+
+  function getDayRecord(dateKey){
+    if(!state.records[dateKey]){
+      state.records[dateKey] = { tasks:{ paper:false, product:false, case:false, summary:false }, note:'', completed:false, points:0, completedAt:null };
+    }
+    const r = state.records[dateKey];
+    if(!r.tasks) r.tasks = { paper:false, product:false, case:false, summary:false };
+    if(typeof r.note !== 'string') r.note = '';
+    if(typeof r.completed !== 'boolean') r.completed = false;
+    if(typeof r.points !== 'number') r.points = 0;
+    if(!r.completedAt) r.completedAt = null;
+    return r;
+  }
+
+  function isRecordComplete(record){
+    return TASKS.every(t => !!record.tasks[t.id]);
+  }
+
+  function recalcSummary(s = state){
+    const completedDates = Object.keys(s.records || {})
+      .filter(k => s.records[k] && s.records[k].completed)
+      .sort();
+    s.completedDates = completedDates;
+    s.points = completedDates.reduce((sum, key) => sum + (Number(s.records[key]?.points) || 0), 0);
+    s.dailyPointsHistory = completedDates.map(key => ({ date:key, points:Number(s.records[key]?.points) || 0 }));
+    s.streak = computeCurrentStreak(s);
+    return s;
+  }
+
+  function computeCurrentStreak(s = state){
+    const completed = new Set(Object.keys(s.records || {}).filter(k => s.records[k] && s.records[k].completed));
+    if(!completed.size) return 0;
+    const today = localDateKey(new Date());
+    const yesterday = prevDateKey(today);
+    const latest = [...completed].sort().slice(-1)[0];
+    if(latest !== today && latest !== yesterday) return 0;
+    let streak = 0;
+    let cursor = latest;
+    while(completed.has(cursor)){
+      streak++;
+      cursor = prevDateKey(cursor);
+    }
+    return streak;
+  }
+
+  function updateXPBar(){
+    const xp = Math.min(1000, state.points);
+    document.getElementById('xpText').textContent = `${xp} / 1000 XP`;
+    document.getElementById('xpBar').style.width = `${Math.min(100, Math.round(xp/10))}%`;
+    document.getElementById('streakValue').textContent = `${state.streak} 天`;
+  }
+
+  function ensureCurrentDay(){
+    const today = localDateKey(new Date());
+    state.currentDate = today;
+    getDayRecord(today);
+  }
+
+  function exportMarkdown(){
+    const today = localDateKey(new Date());
+    const record = getDayRecord(today);
+    const lines = [];
+    lines.push(`# BioSupport Tracker`);
+    lines.push('');
+    lines.push(`- 日期: ${today}`);
+    lines.push(`- 连续打卡: ${state.streak} 天`);
+    lines.push(`- 总积分: ${state.points}`);
+    lines.push(`- 今日完成: ${isRecordComplete(record) ? '已完成' : '未完成'}`);
+    lines.push('');
+    lines.push('## 每日打卡');
+    TASKS.forEach(t => lines.push(`- [${record.tasks[t.id] ? 'x' : ' '}] ${t.label}（${t.minutes} min，+${t.points} 分）`));
+    lines.push('');
+    lines.push('## 今日收获');
+    lines.push(record.note ? record.note : '（空）');
+    lines.push('');
+    lines.push('## 本周完成情况');
+    buildWeeklyRows().forEach(row => lines.push(`- ${row.label}: ${row.completed}/${row.total}，${row.rate}%`));
+    lines.push('');
+    lines.push('## 本月报告');
+    const monthReport = buildRangeReport(30);
+    lines.push(`- 完成天数: ${monthReport.completedDays}`);
+    lines.push(`- 完成率: ${monthReport.rate}%`);
+    lines.push(`- 获得积分: ${monthReport.points}`);
+    lines.push('');
+    lines.push('## 学习日历');
+    buildCalendarRows().forEach(r => lines.push(`- ${r.date}: ${r.status}`));
+    lines.push('');
+    lines.push('## 全部记录');
+    Object.keys(state.records).sort().forEach(date => {
+      const r = state.records[date];
+      lines.push(`### ${date}`);
+      lines.push(`- 完成: ${r.completed ? '是' : '否'}`);
+      lines.push(`- 积分: ${r.points || 0}`);
+      if(r.note) lines.push(`- 收获: ${r.note.replace(/\n/g, ' ')}`);
+      lines.push('');
+    });
+    downloadText(lines.join('\n'), `biosupport_${today}.md`, 'text/markdown;charset=utf-8');
+    state.lastExportAt = new Date().toISOString();
+    saveState();
+    toast('已导出 Markdown');
+  }
+
+  function exportExcel(){
+    if(typeof XLSX === 'undefined'){
+      toast('Excel 库未加载，请稍后重试');
+      return;
+    }
+    const today = localDateKey(new Date());
+    const wb = XLSX.utils.book_new();
+
+    const todayRecord = getDayRecord(today);
+    const summaryRows = [
+      { key:'日期', value: today },
+      { key:'连续打卡', value: state.streak },
+      { key:'总积分', value: state.points },
+      { key:'今日完成', value: isRecordComplete(todayRecord) ? '是' : '否' },
+      { key:'今日收获', value: todayRecord.note || '' },
+      { key:'导出时间', value: new Date().toLocaleString('zh-CN') },
     ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), 'Summary');
 
-    const defaultState = {
-      checked: {},
-      streak: 0,
-      points: 0,
-      note: '',
-      weekHistory: [0, 0, 0, 0, 0, 0, 0],
-      lastSavedAt: new Date().toISOString().slice(0,10),
-      firstUseDate: new Date().toISOString().slice(0,10),
-      completedDays: 0
-    };
+    const taskRows = TASKS.map(t => ({
+      日期: today,
+      任务: t.label,
+      分钟: t.minutes,
+      积分: t.points,
+      完成: todayRecord.tasks[t.id] ? '是' : '否',
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(taskRows), 'Today');
 
-    function readState(){
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? { ...defaultState, ...JSON.parse(raw) } : { ...defaultState };
-      } catch {
-        return { ...defaultState };
+    const recordsRows = Object.keys(state.records).sort().map(date => {
+      const r = state.records[date];
+      return {
+        日期: date,
+        完成: r.completed ? '是' : '否',
+        积分: Number(r.points) || 0,
+        今日收获: r.note || '',
+        任务完成数: TASKS.filter(t => r.tasks && r.tasks[t.id]).length,
+        完成时间: r.completedAt || '',
+      };
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(recordsRows), 'Records');
+
+    const weeklyRows = buildWeeklyRows().map(r => ({
+      周次: r.label,
+      完成天数: r.completed,
+      目标天数: r.total,
+      完成率: `${r.rate}%`
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(weeklyRows), 'Weekly');
+
+    const monthReport = buildRangeReport(30);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{
+      范围: '近30天',
+      完成天数: monthReport.completedDays,
+      完成率: `${monthReport.rate}%`,
+      获得积分: monthReport.points
+    }]), 'Monthly');
+
+    const calRows = buildCalendarRows().map(r => ({
+      日期: r.date,
+      状态: r.status,
+      完成任务: r.completedCount,
+      今日收获: r.note || ''
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(calRows), 'Calendar');
+
+    XLSX.writeFile(wb, `biosupport_${today}.xlsx`);
+    state.lastExportAt = new Date().toISOString();
+    saveState();
+    toast('已导出 Excel');
+  }
+
+  function downloadText(text, filename, mime){
+    const blob = new Blob([text], { type:mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 800);
+  }
+
+  function saveLocalOnly(){
+    state.currentDate = localDateKey(new Date());
+    saveState();
+    toast('已保存到浏览器本地');
+  }
+
+  function computeRangeMetrics(days){
+    const today = parseDateKey(localDateKey(new Date()));
+    let completedDays = 0;
+    let points = 0;
+    let noteCount = 0;
+    for(let i=0;i<days;i++){
+      const d = new Date(today);
+      d.setDate(d.getDate()-i);
+      const key = localDateKey(d);
+      const r = state.records[key];
+      if(r && r.completed){
+        completedDays++;
+        points += Number(r.points) || 0;
+        if((r.note || '').trim()) noteCount++;
       }
     }
+    return { completedDays, points, noteCount, rate: Math.round((completedDays/days)*100) };
+  }
 
-    function writeState(){
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }
+  function buildRangeReport(days){
+    const metrics = computeRangeMetrics(days);
+    return metrics;
+  }
 
-    function todayKey(){
-      return new Date().toISOString().slice(0,10);
-    }
-
-    function pad2(n){ return String(n).padStart(2,'0'); }
-
-    function formatDate(date = new Date()){
-      return `${date.getFullYear()}-${pad2(date.getMonth()+1)}-${pad2(date.getDate())}`;
-    }
-
-    function escapeMarkdown(text = ''){
-      return String(text).replace(/\r/g, '');
-    }
-
-    function buildMarkdown(){
-      const completed = TASKS.filter(t => !!state.checked[t.id]);
-      const completedCount = completed.length;
-      const progress = Math.round(completedCount / TASKS.length * 100);
-      const lines = [];
-      lines.push('# BioSupport Tracker');
-      lines.push('');
-      lines.push(`- 日期：${todayKey()}`);
-      lines.push(`- 连续打卡：${state.streak} 天`);
-      lines.push(`- 积分：${state.points}`);
-      lines.push(`- 今日完成：${completedCount}/${TASKS.length} (${progress}%)`);
-      lines.push(`- 首次使用：${state.firstUseDate}`);
-      lines.push(`- 已完成天数：${state.completedDays || 0}`);
-      lines.push('');
-      lines.push('## 每日 4 项学习打卡');
-      lines.push('');
-      TASKS.forEach(task => {
-        const checked = state.checked[task.id] ? 'x' : ' ';
-        lines.push(`- [${checked}] ${task.label}（${task.minutes} min，+${task.points} 分）`);
+  function buildWeeklyRows(){
+    const labels = ['周一','周二','周三','周四','周五','周六','周日'];
+    const current = parseDateKey(localDateKey(new Date()));
+    const monday = new Date(current);
+    const day = current.getDay() || 7;
+    monday.setDate(current.getDate() - day + 1);
+    const rows = [];
+    for(let i=0;i<7;i++){
+      const d = new Date(monday);
+      d.setDate(monday.getDate()+i);
+      const key = localDateKey(d);
+      const r = state.records[key];
+      const done = !!(r && r.completed);
+      rows.push({
+        label: labels[i],
+        completed: done ? 1 : 0,
+        total: 1,
+        rate: done ? 100 : 0,
+        date: key,
+        status: done ? '已完成' : '未完成',
+        completedCount: done ? 4 : 0,
+        note: r && r.note ? r.note : ''
       });
-      lines.push('');
-      lines.push('## 今日收获记录');
-      lines.push('');
-      lines.push(escapeMarkdown(note.value || '').trim() || '（空）');
-      lines.push('');
-      lines.push('## 每周完成情况');
-      lines.push('');
-      lines.push('| 周次 | 完成数 |');
-      lines.push('| --- | ---: |');
-      state.weekHistory.forEach((v, i) => {
-        lines.push(`| 周${i + 1} | ${v} |`);
+    }
+    return rows;
+  }
+
+  function buildCalendarRows(){
+    const today = parseDateKey(localDateKey(new Date()));
+    const start = new Date(today);
+    start.setDate(today.getDate()-34);
+    const rows = [];
+    for(let i=0;i<35;i++){
+      const d = new Date(start);
+      d.setDate(start.getDate()+i);
+      const key = localDateKey(d);
+      const r = state.records[key];
+      const completed = !!(r && r.completed);
+      const partial = !!(r && !r.completed && Object.values(r.tasks || {}).some(Boolean));
+      rows.push({
+        date: key,
+        status: completed ? '已完成' : partial ? '进行中' : '未开始',
+        completedCount: completed ? 4 : partial ? Object.values(r.tasks || {}).filter(Boolean).length : 0,
+        note: r && r.note ? r.note : ''
       });
-      lines.push('');
-      lines.push('## 备注');
-      lines.push('');
-      lines.push('- 本文件由 BioSupport Tracker 自动生成');
-      lines.push('- 可在 Notion / Obsidian / VS Code / GitHub 中直接打开');
-      lines.push('');
-      return lines.join('\n');
     }
+    return rows;
+  }
 
-    function downloadText(filename, content, type = 'text/markdown;charset=utf-8'){
-      const blob = new Blob([content], { type });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+  function renderNav(){
+    const nav = document.getElementById('nav');
+    nav.innerHTML = NAV.map(n => `<button class="${state.currentTab===n.key ? 'active':''}" data-tab="${n.key}"><span style="width:22px;text-align:center">${n.icon}</span><span>${n.label}</span></button>`).join('');
+    nav.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+      state.currentTab = btn.dataset.tab;
+      saveState(); renderAll(); closeSidebarOnMobile();
+    }));
+  }
+
+  function completeIfReady(dateKey){
+    const record = getDayRecord(dateKey);
+    if(record.completed) return;
+    if(!isRecordComplete(record)) return;
+    const today = localDateKey(new Date());
+    if(dateKey !== today) return;
+    // finalize once per day
+    record.completed = true;
+    record.completedAt = new Date().toISOString();
+    record.points = TASKS.reduce((sum, t) => sum + t.points, 0);
+    state.lastCheckinDate = dateKey;
+    recalcSummary(state);
+    state.currentDate = dateKey;
+    saveState();
+    toast('今日打卡完成 +40 XP');
+  }
+
+  function toggleTask(taskId){
+    const today = localDateKey(new Date());
+    const record = getDayRecord(today);
+    if(record.completed){
+      toast('今日已完成打卡，不能重复计分');
+      return;
     }
+    record.tasks[taskId] = !record.tasks[taskId];
+    if(isRecordComplete(record)){
+      completeIfReady(today);
+    }else{
+      saveState();
+    }
+    renderAll();
+  }
 
-    function buildExcelWorkbook(){
-      if (typeof XLSX === 'undefined') {
-        alert('Excel 导出库尚未加载完成，请稍后再试。');
-        return null;
+  function importDataFromFile(file){
+    const name = (file.name || '').toLowerCase();
+    if(name.endsWith('.json')){
+      const reader = new FileReader();
+      reader.onload = () => {
+        try{
+          const parsed = JSON.parse(String(reader.result || '{}'));
+          mergeImportedJson(parsed);
+          recalcSummary(state); saveState(); renderAll();
+          toast('已导入 JSON 数据');
+        }catch(e){
+          alert('JSON 导入失败：' + e.message);
+        }
+      };
+      reader.readAsText(file, 'utf-8');
+      return;
+    }
+    if(name.endsWith('.xlsx') || name.endsWith('.xls')){
+      if(typeof XLSX === 'undefined'){
+        alert('Excel 库未加载，无法导入');
+        return;
       }
-      const summaryRows = [
-        ['日期', todayKey()],
-        ['连续打卡', `${state.streak} 天`],
-        ['积分', state.points],
-        ['今日完成', `${TASKS.filter(t => !!state.checked[t.id]).length}/${TASKS.length}`],
-        ['首次使用', state.firstUseDate],
-        ['已完成天数', state.completedDays || 0],
-        ['今日收获', note.value || ''],
-      ];
-      const tasksRows = TASKS.map(task => ({
-        项目: task.label,
-        分钟: task.minutes,
-        积分: task.points,
-        完成: state.checked[task.id] ? '是' : '否',
-        分类: task.tag,
-      }));
-      const weekRows = state.weekHistory.map((v, i) => ({ 周次: `周${i + 1}`, 完成数: v }));
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['字段', '值'], ...summaryRows]), 'Summary');
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tasksRows), 'Daily Tasks');
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(weekRows), 'Weekly Progress');
-      return wb;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try{
+          const data = new Uint8Array(reader.result);
+          const wb = XLSX.read(data, { type:'array' });
+          mergeImportedWorkbook(wb);
+          recalcSummary(state); saveState(); renderAll();
+          toast('已导入 Excel 数据');
+        }catch(e){
+          alert('Excel 导入失败：' + e.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+      return;
     }
+    alert('仅支持 .json / .xlsx / .xls 文件');
+  }
 
-    const state = readState();
-    const today = todayKey();
-
-    // Start from a clean zero state, but preserve previously entered note if needed.
-    state.streak = Number(state.streak || 0);
-    state.points = Number(state.points || 0);
-    state.completedDays = Number(state.completedDays || 0);
-    state.lastSavedAt = state.lastSavedAt || today;
-    if (!state.firstUseDate) state.firstUseDate = today;
-    if (!Array.isArray(state.weekHistory) || state.weekHistory.length !== 7) {
-      state.weekHistory = [0, 0, 0, 0, 0, 0, 0];
+  function mergeImportedJson(parsed){
+    if(!parsed || typeof parsed !== 'object') return;
+    // Support both current schema and older exports
+    const records = parsed.records && typeof parsed.records === 'object' ? parsed.records : null;
+    if(records){
+      for(const [date, value] of Object.entries(records)){
+        state.records[date] = normalizeImportedRecord(value);
+      }
     }
-    writeState();
+    if(parsed.note && !state.note) state.note = String(parsed.note);
+    if(parsed.taskDraft && typeof parsed.taskDraft === 'object'){
+      state.taskDraft = Object.assign(state.taskDraft, parsed.taskDraft);
+    }
+    if(Array.isArray(parsed.completedDates) && parsed.completedDates.length){
+      // Merge dates conservatively; actual streak is recalculated from records
+      parsed.completedDates.forEach(date => {
+        if(!state.records[date]) state.records[date] = { tasks:{ paper:false, product:false, case:false, summary:false }, note:'', completed:true, points:40, completedAt:null };
+      });
+    }
+  }
 
-    const taskContainer = document.getElementById('tasks');
-    const barsContainer = document.getElementById('bars');
-    const note = document.getElementById('note');
-    note.value = state.note || '';
+  function normalizeImportedRecord(value){
+    const record = { tasks:{ paper:false, product:false, case:false, summary:false }, note:'', completed:false, points:0, completedAt:null };
+    if(value && typeof value === 'object'){
+      if(value.tasks && typeof value.tasks === 'object'){
+        for(const k of Object.keys(record.tasks)) record.tasks[k] = !!value.tasks[k];
+      }
+      record.note = typeof value.note === 'string' ? value.note : '';
+      record.completed = !!value.completed;
+      record.points = Number(value.points) || 0;
+      record.completedAt = value.completedAt || null;
+    }
+    return record;
+  }
 
-    function renderTasks(){
-      taskContainer.innerHTML = TASKS.map(task => {
-        const on = !!state.checked[task.id];
-        return `
-          <button class="task ${on ? 'on' : ''}" data-id="${task.id}">
-            <div class="left">
-              <div class="check">${on ? '✓' : ''}</div>
-              <div>
-                <div class="t-title">${task.label}</div>
-                <div class="t-meta">${task.minutes} min · +${task.points} 分</div>
+  function mergeImportedWorkbook(wb){
+    const sheets = wb.SheetNames || [];
+    const recordsSheet = sheets.find(s => /records/i.test(s));
+    const todaySheet = sheets.find(s => /^today$/i.test(s));
+    if(recordsSheet){
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[recordsSheet], { defval:'' });
+      rows.forEach(r => {
+        const date = r['日期'] || r['date'];
+        if(!date) return;
+        state.records[String(date)] = {
+          tasks:{
+            paper: String(r['论文'] || r['Paper'] || r['paper'] || '') === '是' || String(r['任务完成数'] || '') === '4',
+            product: true,
+            case: true,
+            summary: true
+          },
+          note: String(r['今日收获'] || r['note'] || ''),
+          completed: String(r['完成'] || r['completed'] || '') === '是',
+          points: Number(r['积分'] || r['points'] || 0) || 0,
+          completedAt: r['完成时间'] || r['completedAt'] || null
+        };
+      });
+    }
+    if(todaySheet){
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[todaySheet], { defval:'' });
+      const today = localDateKey(new Date());
+      const rec = getDayRecord(today);
+      rows.forEach(r => {
+        const task = String(r['任务'] || '').toLowerCase();
+        const done = String(r['完成'] || '') === '是';
+        if(task.includes('论文')) rec.tasks.paper = done;
+        if(task.includes('产品')) rec.tasks.product = done;
+        if(task.includes('case') || task.includes('案例')) rec.tasks.case = done;
+        if(task.includes('总结')) rec.tasks.summary = done;
+      });
+    }
+  }
+
+  function setCurrentNoteFromUI(){
+    const ta = document.getElementById('noteInput');
+    if(ta) state.note = ta.value;
+  }
+
+  function markDayButtonState(el, record, dateKey, today){
+    const completed = !!(record && record.completed);
+    const partial = !!(record && !record.completed && Object.values(record.tasks || {}).some(Boolean));
+    el.classList.remove('done','partial','none','today');
+    if(dateKey === today) el.classList.add('today');
+    if(completed) el.classList.add('done');
+    else if(partial) el.classList.add('partial');
+    else el.classList.add('none');
+    const num = el.querySelector('.num');
+    const status = el.querySelector('.status');
+    if(num) num.textContent = String(parseDateKey(dateKey).getDate());
+    if(status) status.textContent = completed ? '已完成' : partial ? '进行中' : '未开始';
+  }
+
+  function renderContent(){
+    ensureCurrentDay();
+    recalcSummary(state);
+    updateXPBar();
+
+    const today = localDateKey(new Date());
+    const record = getDayRecord(today);
+    const progress = Math.round((TASKS.filter(t => !!record.tasks[t.id]).length / TASKS.length) * 100);
+    const week = buildWeeklyRows();
+    const month30 = buildRangeReport(30);
+    const calendar = buildCalendarRows();
+    const completedCount = TASKS.filter(t => !!record.tasks[t.id]).length;
+    const canComplete = !record.completed && completedCount === TASKS.length;
+
+    const taskSection = `
+      <section class="section-grid">
+        <div class="card">
+          <div class="card-h">
+            <div class="section-title">
+              <div class="left">
+                <h3>每日 4 项学习打卡</h3>
+                <span class="chip">今日 ${today}</span>
+              </div>
+              <div class="toolbar">
+                <span class="chip">已完成 ${completedCount}/4</span>
+                <span class="chip">今日进度 ${progress}%</span>
               </div>
             </div>
-            <div class="tag ${task.cls}">${on ? '已完成' : task.tag}</div>
-          </button>
-        `;
-      }).join('');
-    }
-
-    function renderBars(){
-      const max = Math.max(...state.weekHistory, 1);
-      barsContainer.innerHTML = state.weekHistory.map((v, i) => {
-        const h = Math.max(18, Math.round((v / max) * 130));
-        return `
-          <div class="bar-item">
-            <div class="bar-box"><div class="bar" style="height:${h}px"></div></div>
-            <div class="bar-label">周${i + 1}</div>
+            <p>完成四项后当天只计一次分数与连续天数，避免重复点击造成数据失真。</p>
           </div>
-        `;
-      }).join('');
+          <div class="card-b">
+            <div class="task-list">
+              ${TASKS.map(t => {
+                const active = !!record.tasks[t.id];
+                return `
+                  <button class="task ${active ? 'active':''} ${record.completed ? 'locked':''}" data-task="${t.id}" ${record.completed ? 'disabled' : ''}>
+                    <div class="left">
+                      <div class="check">${active ? '✓' : ''}</div>
+                      <div>
+                        <div class="title">${t.label}</div>
+                        <div class="meta">${t.minutes} min · +${t.points} 分</div>
+                      </div>
+                    </div>
+                    <div class="badge ${active ? 'good':''}">${record.completed ? '今日已锁定' : (active ? '已完成' : '待办')}</div>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+            <div class="sep"></div>
+            <div class="toolbar">
+              <button class="btn ghost" id="saveLocalBtn">保存内容</button>
+              <button class="btn soft" id="importBtn">导入历史数据</button>
+              <button class="btn good" id="exportMdBtn">导出 Markdown</button>
+              <button class="btn primary" id="exportXlsxBtn">导出 Excel</button>
+            </div>
+            <input id="importFile" type="file" accept=".json,.xlsx,.xls" class="hidden" />
+            <div style="margin-top:14px" class="report-box">
+              <div class="section-title">
+                <div class="left"><strong>今日完成状态</strong></div>
+                <span class="badge ${record.completed ? 'good' : canComplete ? 'blue' : ''}">${record.completed ? '今日已完成' : canComplete ? '可完成' : '继续打卡'}</span>
+              </div>
+              <div style="margin-top:10px" class="progress-wrap"><div class="progress-fill" style="width:${progress}%"></div></div>
+              <div class="tiny" style="margin-top:10px">完成后将自动写入本地，并锁定当天的积分与连续天数，避免重复计数。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <h3>连续打卡与积分</h3>
+            <p>基于真实日期计算，而不是页面打开次数或点击次数。</p>
+          </div>
+          <div class="card-b">
+            <div class="mini-grid">
+              <div class="mini">
+                <div class="lbl">连续打卡</div>
+                <div class="big">${state.streak} 天</div>
+                <div class="mini-note">按真实日期自动计算</div>
+              </div>
+              <div class="mini">
+                <div class="lbl">累计积分</div>
+                <div class="big">${state.points}</div>
+                <div class="mini-note">每天最多记一次</div>
+              </div>
+              <div class="mini">
+                <div class="lbl">本月完成率</div>
+                <div class="big">${month30.rate}%</div>
+                <div class="mini-note">${month30.completedDays}/30 天</div>
+              </div>
+              <div class="mini">
+                <div class="lbl">今日积分</div>
+                <div class="big">${record.completed ? 40 : 0}</div>
+                <div class="mini-note">仅第一次完成生效</div>
+              </div>
+            </div>
+            <div class="sep"></div>
+            <div class="report-grid">
+              <div class="report-box">
+                <h4>本周完成情况</h4>
+                <div class="desc">自动统计近 7 天的完成情况，适合快速查看学习节奏。</div>
+                <div class="score">${week.filter(x => x.completed).length}/7</div>
+              </div>
+              <div class="report-box">
+                <h4>本月学习报告</h4>
+                <div class="desc">自动统计近 30 天完成天数、完成率与积分累计。</div>
+                <div class="score">${month30.completedDays}</div>
+                <div class="tiny">完成天数 · ${month30.points} 积分</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    `;
+
+    const dashboardSection = `
+      <section class="grid-stats">
+        <div class="card stat"><div class="row"><div class="k">连续打卡</div><div>🔥</div></div><div class="v">${state.streak} 天</div></div>
+        <div class="card stat"><div class="row"><div class="k">累计积分</div><div>⭐</div></div><div class="v">${state.points}</div></div>
+        <div class="card stat"><div class="row"><div class="k">近30天完成率</div><div>📊</div></div><div class="v">${month30.rate}%</div></div>
+        <div class="card stat"><div class="row"><div class="k">今日完成</div><div>📅</div></div><div class="v">${record.completed ? '已完成' : '进行中'}</div></div>
+      </section>
+    `;
+
+    const productSection = `
+      <section class="card" style="margin-bottom:18px">
+        <div class="card-h"><h3>产品学习中心</h3><p>Thermo 产品学习模块：PCR、NGS、Flow、KingFisher、Orbitrap 等。</p></div>
+        <div class="card-b"><div class="products">${PRODUCTS.map(p => `
+          <div class="product">
+            <div class="img">🧪</div>
+            <h4>${p.name}</h4>
+            <p>${p.desc}</p>
+            <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:12px;color:var(--muted)"><span>掌握度</span><span>${p.progress}%</span></div>
+            <div class="progress-wrap" style="height:8px;margin-top:8px"><div class="progress-fill" style="width:${p.progress}%"></div></div>
+            <div style="margin-top:8px;font-size:12px;color:var(--muted)">${p.modules} 模块</div>
+          </div>`).join('')}</div></div>
+      </section>
+    `;
+
+    const casePaperSection = `
+      <section class="two-col">
+        <div class="card">
+          <div class="card-h">
+            <div class="section-title">
+              <div class="left"><h3>Troubleshooting 库</h3></div>
+              <div class="toolbar"><span class="chip">${filterCount(CASES, state.search)} 条结果</span></div>
+            </div>
+            <p>把常见问题沉淀成可检索的案例库，方便快速定位与复盘。</p>
+          </div>
+          <div class="card-b">
+            <div class="case-grid">
+              ${filterCases(CASES, state.search).map(c => `
+                <div class="case">
+                  <div class="case-top">
+                    <span class="badge blue">${c.tag}</span>
+                    <span class="badge">${c.level}</span>
+                  </div>
+                  <h4>${c.title}</h4>
+                  <p>${c.summary}</p>
+                  <div style="margin-top:10px;font-size:12px;color:var(--muted)">更新于 ${c.date}</div>
+                </div>
+              `).join('') || `<div class="muted">没有找到相关案例。</div>`}
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">
+            <h3>文献阅读管理</h3>
+            <p>Nature、Cell、Clinical Cancer Research 等高价值阅读内容。</p>
+          </div>
+          <div class="card-b">
+            <div class="paper-list">
+              ${PAPERS.map(p => `
+                <div class="paper">
+                  <div class="icon-box">📄</div>
+                  <div style="min-width:0;flex:1">
+                    <div class="t1"><span>${p.journal}</span><span>${p.date}</span></div>
+                    <div class="t2">${p.title}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </section>
+    `;
+
+    const roadmapSection = `
+      <section class="card" style="margin-bottom:18px">
+        <div class="card-h"><h3>成长路线图</h3><p>Technical Support → Senior TS → Application Scientist</p></div>
+        <div class="card-b">
+          <div class="roadmap">
+            ${ROADMAP.map((s, idx) => `
+              <div class="step ${idx===1 ? 'active':''}">
+                <h4>${s.stage}</h4>
+                <div class="lvl">${s.level}</div>
+                <ul>${s.items.map(i => `<li>${i}</li>`).join('')}</ul>
+              </div>
+            `).join('')}
+          </div>
+          <div style="margin-top:14px" class="report-box">
+            <div class="section-title">
+              <div class="left"><strong>当前阶段</strong><span class="chip">Senior TS · 60%</span></div>
+              <span class="badge blue">成长中</span>
+            </div>
+            <div style="margin-top:10px" class="progress-wrap"><div class="progress-fill" style="width:60%;"></div></div>
+            <div class="tiny" style="margin-top:10px">目标：复杂问题解决、独立支持、客户表达、项目协作。</div>
+          </div>
+        </div>
+      </section>
+    `;
+
+    const notesSection = `
+      <section class="card" style="margin-bottom:18px">
+        <div class="card-h">
+          <div class="section-title">
+            <div class="left"><h3>今日收获记录</h3><span class="chip">本地保存 + 导出整页 Excel</span></div>
+            <div class="toolbar">
+              <button class="btn primary small" id="pageExcelBtn">导出整页 Excel</button>
+            </div>
+          </div>
+          <p>建议把今天最重要的一条结论写下来，形成长期可搜索的知识资产。</p>
+        </div>
+        <div class="card-b">
+          <div class="fields">
+            <div class="field">
+              <label>今日收获</label>
+              <textarea id="noteInput" placeholder="例如：KingFisher 乙醇残留会影响 PCR 扩增。">${escapeHtml(record.note || '')}</textarea>
+            </div>
+            <div class="field">
+              <label>补充备注</label>
+              <textarea id="extraInput" placeholder="可记录客户需求、学习重点或明日计划。">${escapeHtml(state.extraNote || '')}</textarea>
+            </div>
+          </div>
+          <div class="toolbar" style="margin-top:14px">
+            <button class="btn ghost" id="saveNoteBtn">保存内容</button>
+            <button class="btn good" id="exportNoteMdBtn">导出 Markdown</button>
+            <button class="btn primary" id="exportNoteXlsxBtn">导出 Excel</button>
+          </div>
+          <div class="footer-note">
+            <strong>说明：</strong>“保存内容”只会保存到浏览器本地，不会自动下载文件；“导出”才会生成文件。
+          </div>
+        </div>
+      </section>
+    `;
+
+    const calendarSection = `
+      <section class="card" style="margin-bottom:18px">
+        <div class="card-h">
+          <div class="section-title">
+            <div class="left"><h3>GitHub 风格学习日历</h3><span class="chip">近 35 天</span></div>
+            <span class="chip">按真实日期统计</span>
+          </div>
+          <p>显示过去 35 天的学习状态：已完成、进行中、未开始。</p>
+        </div>
+        <div class="card-b">
+          <div class="calendar">
+            ${calendar.map(d => `
+              <div class="day ${d.status === '已完成' ? 'done' : d.status === '进行中' ? 'partial' : 'none'} ${d.date === today ? 'today' : ''}">
+                <div class="num">${new Date(d.date + 'T00:00:00').getDate()}</div>
+                <div class="status">${d.status}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </section>
+    `;
+
+    let html = dashboardSection;
+    const tab = state.currentTab;
+    if(tab === 'home') html += taskSection + roadmapSection + casePaperSection + calendarSection + notesSection;
+    if(tab === 'daily') html += taskSection + calendarSection + notesSection;
+    if(tab === 'products') html += productSection + notesSection;
+    if(tab === 'cases') html += casePaperSection + notesSection;
+    if(tab === 'papers') html += casePaperSection + notesSection;
+    if(tab === 'roadmap') html += roadmapSection + notesSection;
+    if(tab === 'notes') html += notesSection + calendarSection;
+
+    const content = document.getElementById('content');
+    content.innerHTML = html;
+
+    bindEvents();
+    renderNav();
+  }
+
+  function filterCases(items, query){
+    const q = (query || '').trim().toLowerCase();
+    if(!q) return items;
+    return items.filter(c => [c.tag, c.title, c.summary, c.level].some(x => String(x).toLowerCase().includes(q)));
+  }
+  function filterCount(items, query){ return filterCases(items, query).length; }
+
+  function bindEvents(){
+    document.querySelectorAll('[data-task]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const today = localDateKey(new Date());
+        const id = btn.getAttribute('data-task');
+        toggleTask(id);
+        // toggleTask already rerenders
+      });
+    });
+
+    const saveLocalBtn = document.getElementById('saveLocalBtn');
+    if(saveLocalBtn) saveLocalBtn.onclick = () => { setCurrentNoteFromUI(); saveState(); toast('已保存到浏览器本地'); };
+
+    const importBtn = document.getElementById('importBtn');
+    const importFile = document.getElementById('importFile');
+    if(importBtn && importFile){
+      importBtn.onclick = () => importFile.click();
+      importFile.onchange = () => {
+        if(importFile.files && importFile.files[0]) importDataFromFile(importFile.files[0]);
+        importFile.value = '';
+      };
     }
 
-    function updateStats(){
-      const doneCount = TASKS.filter(t => !!state.checked[t.id]).length;
-      const progress = Math.round(doneCount / TASKS.length * 100);
-      const pointsToday = TASKS.filter(t => !!state.checked[t.id]).reduce((s, t) => s + t.points, 0);
+    const exportMdBtn = document.getElementById('exportMdBtn');
+    const exportXlsxBtn = document.getElementById('exportXlsxBtn');
+    const pageExcelBtn = document.getElementById('pageExcelBtn');
+    const exportNoteMdBtn = document.getElementById('exportNoteMdBtn');
+    const exportNoteXlsxBtn = document.getElementById('exportNoteXlsxBtn');
+    if(exportMdBtn) exportMdBtn.onclick = () => { setCurrentNoteFromUI(); exportMarkdown(); };
+    if(exportXlsxBtn) exportXlsxBtn.onclick = () => { setCurrentNoteFromUI(); exportExcel(); };
+    if(pageExcelBtn) pageExcelBtn.onclick = () => { setCurrentNoteFromUI(); exportExcel(); };
+    if(exportNoteMdBtn) exportNoteMdBtn.onclick = () => { setCurrentNoteFromUI(); exportMarkdown(); };
+    if(exportNoteXlsxBtn) exportNoteXlsxBtn.onclick = () => { setCurrentNoteFromUI(); exportExcel(); };
 
-      document.getElementById('streakText').textContent = state.streak;
-      document.getElementById('pointsText').textContent = state.points;
-      document.getElementById('streakMini').textContent = `${state.streak} 天`;
-      document.getElementById('pointsMini').textContent = state.points;
-      document.getElementById('doneCount').textContent = `${doneCount} / ${TASKS.length}`;
-      document.getElementById('progressText').textContent = `${progress}%`;
-      document.getElementById('progressFill').style.width = `${progress}%`;
-      document.getElementById('todayText').textContent = state.lastSavedAt;
-      return pointsToday;
-    }
+    const noteInput = document.getElementById('noteInput');
+    const extraInput = document.getElementById('extraInput');
+    if(noteInput) noteInput.addEventListener('input', () => { state.note = noteInput.value; saveState(); });
+    if(extraInput) extraInput.addEventListener('input', () => { state.extraNote = extraInput.value; saveState(); });
 
-    function save(){
-      state.note = note.value;
-      state.lastSavedAt = today;
-      writeState();
-    }
-
-    taskContainer.addEventListener('click', (e) => {
-      const btn = e.target.closest('.task');
-      if (!btn) return;
-      const id = btn.dataset.id;
-      const task = TASKS.find(t => t.id === id);
-      state.checked[id] = !state.checked[id];
-      state.points = Math.max(0, Number(state.points || 0) + (state.checked[id] ? task.points : -task.points));
-      if (Object.values(state.checked).every(Boolean)) {
-        state.streak = Math.max(0, Number(state.streak || 0)) + 1;
-        state.completedDays = (state.completedDays || 0) + 1;
-      }
-      save();
-      renderTasks();
-      renderBars();
-      updateStats();
+    document.querySelectorAll('[data-tab]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.currentTab = btn.getAttribute('data-tab');
+        saveState();
+        renderAll();
+      });
     });
+  }
 
-    document.getElementById('resetBtn').addEventListener('click', () => {
-      state.checked = {};
-      state.points = 0;
-      state.streak = 0;
-      state.completedDays = 0;
-      state.lastSavedAt = today;
-      note.value = '';
-      save();
-      renderTasks();
-      renderBars();
-      updateStats();
-    });
+  function renderAll(){
+    renderNav();
+    renderContent();
+    const searchInput = document.getElementById('searchInput');
+    const searchInput2 = document.getElementById('searchInput2');
+    if(searchInput) searchInput.value = state.search || '';
+    if(searchInput2) searchInput2.value = state.search || '';
+    document.getElementById('streakValue').textContent = `${state.streak} 天`;
+    const xp = Math.min(1000, state.points);
+    document.getElementById('xpText').textContent = `${xp} / 1000 XP`;
+    document.getElementById('xpBar').style.width = `${Math.min(100, Math.round(xp/10))}%`;
+  }
 
-    document.getElementById('saveBtn').addEventListener('click', () => {
-      save();
-      const markdown = buildMarkdown();
-      downloadText(`biosupport-tracker-${today}.md`, markdown, 'text/markdown;charset=utf-8');
-      alert('已保存并导出 Markdown。');
-    });
+  function closeSidebarOnMobile(){
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('overlay').classList.remove('show');
+  }
 
-    document.getElementById('exportMarkdownBtn').addEventListener('click', () => {
-      save();
-      const markdown = buildMarkdown();
-      downloadText(`biosupport-tracker-${today}.md`, markdown, 'text/markdown;charset=utf-8');
-    });
+  const state = loadState();
+  ensureCurrentDay();
+  recalcSummary(state);
+  saveState();
 
-    document.getElementById('exportExcelBtn').addEventListener('click', () => {
-      save();
-      const wb = buildExcelWorkbook();
-      if (!wb) return;
-      XLSX.writeFile(wb, `biosupport-tracker-${today}.xlsx`);
-    });
+  document.getElementById('menuBtn').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('overlay').classList.toggle('show');
+  });
+  document.getElementById('overlay').addEventListener('click', closeSidebarOnMobile);
 
-    note.addEventListener('input', save);
+  const syncSearch = (val) => { state.search = val; saveState(); renderAll(); };
+  document.getElementById('searchInput').addEventListener('input', e => syncSearch(e.target.value));
+  document.getElementById('searchInput2').addEventListener('input', e => syncSearch(e.target.value));
 
-    renderTasks();
-    renderBars();
-    updateStats();
-  </script>
+  // Public helper for importing old data manually from console if needed
+  window.BioSupportTracker = { state, saveState, recalcSummary };
+
+  renderAll();
+})();
+</script>
 </body>
 </html>
