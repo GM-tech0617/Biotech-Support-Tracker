@@ -7,8 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root{
-      --bg1:#f6f9ff; --bg2:#eef4ff;
-      --panel:rgba(255,255,255,.94);
+      --bg1:#f6f9ff; --bg2:#eef4ff; --panel:rgba(255,255,255,.94);
       --text:#0f172a; --muted:#64748b; --line:#dbe5f1;
       --brand:#1d4ed8; --brand2:#7c3aed; --good:#16a34a;
       --shadow:0 18px 45px rgba(15,23,42,.08); --radius:24px;
@@ -72,6 +71,7 @@
     .task{
       display:flex;align-items:center;justify-content:space-between;gap:14px;
       padding:14px 14px;border-radius:18px;border:1px solid var(--line);background:#fff;cursor:pointer;transition:.18s ease;
+      width:100%; text-align:left;
     }
     .task:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(15,23,42,.06)}
     .task.completed{background:#eff6ff;border-color:#bfdbfe}
@@ -146,9 +146,9 @@
           <p>正式长期使用版。只保留首页内容，围绕每日打卡、真实日期连续记录、周/月报告、今日收获、导入导出和本地保存构建，适合每天打开使用。</p>
         </div>
         <div class="toolbar">
-          <button class="btn soft small" id="importBtn">导入历史数据</button>
-          <button class="btn good small" id="exportMdBtn">导出 Markdown</button>
-          <button class="btn primary small" id="exportXlsxBtn">导出 Excel</button>
+          <button type="button" class="btn soft small" data-action="import">导入历史数据</button>
+          <button type="button" class="btn good small" data-action="export-md">导出 Markdown</button>
+          <button type="button" class="btn primary small" data-action="export-xlsx">导出 Excel</button>
         </div>
       </div>
       <div class="chips">
@@ -175,7 +175,7 @@
         <div class="toolbar">
           <span class="chip2" id="todayDateChip">今天</span>
           <span class="chip2" id="todayProgressChip">已完成 0/4</span>
-          <button class="btn ghost small" id="saveBtn">保存内容</button>
+          <button type="button" class="btn ghost small" data-action="save-local">保存内容</button>
         </div>
       </div>
       <div class="section-b">
@@ -253,8 +253,8 @@
           <p>这里只记录你今天的收获。保存只写入浏览器本地；导出才会生成文件。</p>
         </div>
         <div class="toolbar">
-          <button class="btn good small" id="exportNoteMdBtn">导出 Markdown</button>
-          <button class="btn primary small" id="exportNoteXlsxBtn">导出 Excel</button>
+          <button type="button" class="btn good small" data-action="export-note-md">导出 Markdown</button>
+          <button type="button" class="btn primary small" data-action="export-note-xlsx">导出 Excel</button>
         </div>
       </div>
       <div class="section-b">
@@ -269,10 +269,10 @@
           </div>
         </div>
         <div class="toolbar" style="margin-top:14px">
-          <button class="btn ghost" id="saveLocalBtn">保存内容</button>
-          <button class="btn soft" id="importBtn2">导入历史数据</button>
-          <button class="btn good" id="exportMdBtn2">导出 Markdown</button>
-          <button class="btn primary" id="exportXlsxBtn2">导出 Excel</button>
+          <button type="button" class="btn ghost" data-action="save-local">保存内容</button>
+          <button type="button" class="btn soft" data-action="import">导入历史数据</button>
+          <button type="button" class="btn good" data-action="export-md">导出 Markdown</button>
+          <button type="button" class="btn primary" data-action="export-xlsx">导出 Excel</button>
           <input id="importFile" type="file" accept=".json,.xlsx,.xls" class="hidden" />
         </div>
         <div class="note-box">保存只会写入本地浏览器；导出 Markdown / Excel 会生成文件。每天建议只导出一次即可。</div>
@@ -284,7 +284,7 @@
 
 <script>
 (() => {
-  const STORAGE_KEY = 'biosupport-tracker-release-v2';
+  const STORAGE_KEY = 'biosupport-tracker-release-v3';
   const TASKS = [
     { id:'paper', label:'阅读一篇论文摘要', minutes:10, points:10 },
     { id:'product', label:'学习一个产品知识点', minutes:10, points:10 },
@@ -292,13 +292,17 @@
     { id:'summary', label:'总结并沉淀到知识库', minutes:10, points:5 },
   ];
 
+  const state = loadState();
+
+  function todayKey() {
+    return localDateKey(new Date());
+  }
   function localDateKey(d) {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
   }
-  function todayKey() { return localDateKey(new Date()); }
   function parseDateKey(key) {
     const [y,m,d] = key.split('-').map(Number);
     return new Date(y, m - 1, d);
@@ -317,7 +321,6 @@
       "'": '&#39;'
     }[ch]));
   }
-
   function defaultRecord() {
     return {
       tasks: { paper:false, product:false, case:false, summary:false },
@@ -329,12 +332,7 @@
     };
   }
   function defaultState() {
-    return {
-      records:{},
-      importedAt:null,
-      lastSavedAt:null,
-      lastExportAt:null
-    };
+    return { records:{}, importedAt:null, lastSavedAt:null, lastExportAt:null };
   }
   function normalizeRecord(r) {
     const base = defaultRecord();
@@ -354,16 +352,13 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return defaultState();
       const parsed = JSON.parse(raw);
-      const state = Object.assign(defaultState(), parsed || {});
-      state.records = state.records && typeof state.records === 'object' ? state.records : {};
-      return state;
+      const s = Object.assign(defaultState(), parsed || {});
+      s.records = s.records && typeof s.records === 'object' ? s.records : {};
+      return s;
     } catch {
       return defaultState();
     }
   }
-
-  const state = loadState();
-
   function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     state.lastSavedAt = new Date().toISOString();
@@ -424,10 +419,7 @@
       d.setDate(monday.getDate() + i);
       const key = localDateKey(d);
       const r = state.records[key];
-      if (r && r.completed) {
-        done++;
-        points += Number(r.points) || 0;
-      }
+      if (r && r.completed) { done++; points += Number(r.points) || 0; }
     }
     return { done, points, rate: Math.round((done / 7) * 100) };
   }
@@ -439,10 +431,7 @@
       d.setDate(now.getDate() - i);
       const key = localDateKey(d);
       const r = state.records[key];
-      if (r && r.completed) {
-        done++;
-        points += Number(r.points) || 0;
-      }
+      if (r && r.completed) { done++; points += Number(r.points) || 0; }
     }
     return { done, points, rate: Math.round((done / days) * 100) };
   }
@@ -456,9 +445,13 @@
       d.setDate(start.getDate() + i);
       const key = localDateKey(d);
       const r = state.records[key];
-      const complete = !!(r && r.completed);
-      const partial = !!(r && !r.completed && Object.values(r.tasks || {}).some(Boolean));
-      rows.push({ date:key, complete, partial, today:key === todayKey(), note:r && r.note ? r.note : '' });
+      rows.push({
+        date: key,
+        complete: !!(r && r.completed),
+        partial: !!(r && !r.completed && Object.values(r.tasks || {}).some(Boolean)),
+        today: key === todayKey(),
+        note: r && r.note ? r.note : '',
+      });
     }
     return rows;
   }
@@ -468,12 +461,88 @@
     const progress = Math.round((done / TASKS.length) * 100);
     return { record:r, done, progress, todayPoints:r.completed ? 40 : 0 };
   }
-
   function updateStateFromInputs() {
     const r = getRecord(todayKey());
     r.note = document.getElementById('noteInput').value || '';
     r.extraNote = document.getElementById('extraInput').value || '';
     state.records[todayKey()] = r;
+  }
+
+  function renderTasks() {
+    const wrap = document.getElementById('taskList');
+    const r = getRecord(todayKey());
+    const locked = r.completed;
+    wrap.innerHTML = TASKS.map(t => {
+      const active = !!r.tasks[t.id];
+      return `
+        <button type="button" class="task ${active ? 'completed' : ''} ${locked ? 'locked' : ''}" data-task="${t.id}" ${locked ? 'disabled' : ''}>
+          <div class="task-left">
+            <div class="check">${active ? '✓' : ''}</div>
+            <div>
+              <div class="task-title">${t.label}</div>
+              <div class="task-meta">${t.minutes} min · +${t.points} 分</div>
+            </div>
+          </div>
+          <div class="badge ${locked ? 'good' : active ? 'good' : ''}">${locked ? '今日已锁定' : active ? '已完成' : '待办'}</div>
+        </button>
+      `;
+    }).join('');
+  }
+
+  function renderCalendar() {
+    const el = document.getElementById('calendar');
+    const rows = calendarRows();
+    el.innerHTML = rows.map(d => `
+      <div class="day ${d.complete ? 'done' : d.partial ? 'partial' : 'none'} ${d.today ? 'today' : ''}">
+        <div class="num">${new Date(d.date + 'T00:00:00').getDate()}</div>
+        <div>${d.complete ? '已完成' : d.partial ? '进行中' : '未开始'}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderSummary() {
+    const streak = computeStreak();
+    const totalPoints = computeTotalPoints();
+    const weekly = computeWeekly();
+    const monthly = computeMonthly(30);
+    const { record, done, progress, todayPoints } = currentDaySummary();
+    const today = todayKey();
+
+    document.getElementById('streakChip').textContent = `${streak} 天`;
+    document.getElementById('pointsChip').textContent = `${totalPoints}`;
+    document.getElementById('monthRateChip').textContent = `${monthly.rate}%`;
+    document.getElementById('todayStatusChip').textContent = record.completed ? '已完成' : '进行中';
+
+    document.getElementById('streakValue').textContent = `${streak} 天`;
+    document.getElementById('pointsValue').textContent = `${totalPoints}`;
+    document.getElementById('monthRateValue').textContent = `${monthly.rate}%`;
+    document.getElementById('todayStatusValue').textContent = record.completed ? '已完成' : '进行中';
+
+    document.getElementById('todayDateChip').textContent = `今天：${today}`;
+    document.getElementById('todayProgressChip').textContent = `已完成 ${done}/4`;
+    document.getElementById('todayProgressValue').textContent = `${progress}%`;
+    document.getElementById('todayPointsValue').textContent = `${todayPoints}`;
+    document.getElementById('todayProgressBar').style.width = `${progress}%`;
+    document.getElementById('todayPointsBar').style.width = `${record.completed ? 100 : 0}%`;
+
+    document.getElementById('weekDoneValue').textContent = `${weekly.done}/7`;
+    document.getElementById('weekDoneBar').style.width = `${Math.round((weekly.done / 7) * 100)}%`;
+    document.getElementById('monthDoneValue').textContent = `${monthly.done}/30`;
+    document.getElementById('monthDoneBar').style.width = `${Math.round((monthly.done / 30) * 100)}%`;
+
+    document.getElementById('weeklyScore').textContent = `${weekly.done}/7`;
+    document.getElementById('weeklyDetail').textContent = `完成 ${weekly.done} 天，积分 ${weekly.points}`;
+    document.getElementById('monthlyScore').textContent = `${monthly.done}/30`;
+    document.getElementById('monthlyDetail').textContent = `完成率 ${monthly.rate}%，积分 ${monthly.points}`;
+
+    document.getElementById('noteInput').value = record.note || '';
+    document.getElementById('extraInput').value = record.extraNote || '';
+  }
+
+  function renderAll() {
+    renderTasks();
+    renderCalendar();
+    renderSummary();
   }
 
   function downloadText(text, filename, mime) {
@@ -615,6 +684,7 @@
     if (parsed.note) getRecord(todayKey()).note = String(parsed.note);
     if (parsed.extraNote) getRecord(todayKey()).extraNote = String(parsed.extraNote);
   }
+
   function mergeImportedWorkbook(wb) {
     const names = wb.SheetNames || [];
     const recordsSheet = names.find(s => /records/i.test(s));
@@ -673,7 +743,7 @@
           const parsed = JSON.parse(String(reader.result || '{}'));
           mergeImportedJson(parsed);
           saveState();
-          render();
+          renderAll();
           toast('已导入 JSON 数据');
         } catch (e) {
           alert('JSON 导入失败：' + e.message);
@@ -694,7 +764,7 @@
           const wb = XLSX.read(data, { type:'array' });
           mergeImportedWorkbook(wb);
           saveState();
-          render();
+          renderAll();
           toast('已导入 Excel 数据');
         } catch (e) {
           alert('Excel 导入失败：' + e.message);
@@ -706,122 +776,66 @@
     alert('仅支持 .json / .xlsx / .xls 文件');
   }
 
-  function renderTasks() {
-    const wrap = document.getElementById('taskList');
-    const r = getRecord(todayKey());
-    const locked = r.completed;
-    wrap.innerHTML = TASKS.map(t => {
-      const active = !!r.tasks[t.id];
-      return `
-        <button class="task ${active ? 'completed' : ''} ${locked ? 'locked' : ''}" data-task="${t.id}" ${locked ? 'disabled' : ''}>
-          <div class="task-left">
-            <div class="check">${active ? '✓' : ''}</div>
-            <div>
-              <div class="task-title">${t.label}</div>
-              <div class="task-meta">${t.minutes} min · +${t.points} 分</div>
-            </div>
-          </div>
-          <div class="badge ${locked ? 'good' : active ? 'good' : ''}">${locked ? '今日已锁定' : active ? '已完成' : '待办'}</div>
-        </button>
-      `;
-    }).join('');
-    wrap.querySelectorAll('[data-task]').forEach(btn => {
-      btn.addEventListener('click', () => toggleTask(btn.dataset.task));
+  function bindEvents() {
+    document.addEventListener('click', (ev) => {
+      const taskBtn = ev.target.closest('button[data-task]');
+      if (taskBtn) {
+        const id = taskBtn.getAttribute('data-task');
+        const rec = getRecord(todayKey());
+        if (rec.completed) {
+          toast('今日已完成，不能重复计分');
+          return;
+        }
+        rec.tasks[id] = !rec.tasks[id];
+        state.records[todayKey()] = rec;
+        if (isComplete(rec)) {
+          completeTodayIfNeeded();
+          toast('今日打卡完成 +40 分');
+        }
+        saveState();
+        renderAll();
+        return;
+      }
+
+      const actionBtn = ev.target.closest('button[data-action]');
+      if (!actionBtn) return;
+      const action = actionBtn.getAttribute('data-action');
+      if (action === 'save-local') {
+        updateStateFromInputs();
+        saveState();
+        toast('已保存到浏览器本地');
+        renderAll();
+      } else if (action === 'export-md') {
+        exportMarkdown();
+      } else if (action === 'export-xlsx') {
+        exportExcel();
+      } else if (action === 'export-note-md') {
+        exportMarkdown();
+      } else if (action === 'export-note-xlsx') {
+        exportExcel();
+      } else if (action === 'import') {
+        document.getElementById('importFile').click();
+      }
     });
-  }
 
-  function renderCalendar() {
-    const el = document.getElementById('calendar');
-    const rows = calendarRows();
-    el.innerHTML = rows.map(d => `
-      <div class="day ${d.complete ? 'done' : d.partial ? 'partial' : 'none'} ${d.today ? 'today' : ''}">
-        <div class="num">${new Date(d.date + 'T00:00:00').getDate()}</div>
-        <div>${d.complete ? '已完成' : d.partial ? '进行中' : '未开始'}</div>
-      </div>
-    `).join('');
-  }
-
-  function renderSummary() {
-    const streak = computeStreak();
-    const totalPoints = computeTotalPoints();
-    const weekly = computeWeekly();
-    const monthly = computeMonthly(30);
-    const { record, done, progress, todayPoints } = currentDaySummary();
-    const today = todayKey();
-
-    document.getElementById('streakChip').textContent = `${streak} 天`;
-    document.getElementById('pointsChip').textContent = `${totalPoints}`;
-    document.getElementById('monthRateChip').textContent = `${monthly.rate}%`;
-    document.getElementById('todayStatusChip').textContent = record.completed ? '已完成' : '进行中';
-
-    document.getElementById('streakValue').textContent = `${streak} 天`;
-    document.getElementById('pointsValue').textContent = `${totalPoints}`;
-    document.getElementById('monthRateValue').textContent = `${monthly.rate}%`;
-    document.getElementById('todayStatusValue').textContent = record.completed ? '已完成' : '进行中';
-
-    document.getElementById('todayDateChip').textContent = `今天：${today}`;
-    document.getElementById('todayProgressChip').textContent = `已完成 ${done}/4`;
-    document.getElementById('todayProgressValue').textContent = `${progress}%`;
-    document.getElementById('todayPointsValue').textContent = `${todayPoints}`;
-    document.getElementById('todayProgressBar').style.width = `${progress}%`;
-    document.getElementById('todayPointsBar').style.width = `${record.completed ? 100 : 0}%`;
-
-    document.getElementById('weekDoneValue').textContent = `${weekly.done}/7`;
-    document.getElementById('weekDoneBar').style.width = `${Math.round((weekly.done / 7) * 100)}%`;
-    document.getElementById('monthDoneValue').textContent = `${monthly.done}/30`;
-    document.getElementById('monthDoneBar').style.width = `${Math.round((monthly.done / 30) * 100)}%`;
-
-    document.getElementById('weeklyScore').textContent = `${weekly.done}/7`;
-    document.getElementById('weeklyDetail').textContent = `完成 ${weekly.done} 天，积分 ${weekly.points}`;
-    document.getElementById('monthlyScore').textContent = `${monthly.done}/30`;
-    document.getElementById('monthlyDetail').textContent = `完成率 ${monthly.rate}%，积分 ${monthly.points}`;
-
-    document.getElementById('noteInput').value = record.note || '';
-    document.getElementById('extraInput').value = record.extraNote || '';
-  }
-
-  function render() {
-    renderTasks();
-    renderCalendar();
-    renderSummary();
-  }
-
-  function setCurrentNote() {
-    const r = getRecord(todayKey());
-    r.note = document.getElementById('noteInput').value || '';
-    r.extraNote = document.getElementById('extraInput').value || '';
-    state.records[todayKey()] = r;
-  }
-
-  function bindButtons() {
-    document.getElementById('saveBtn').onclick = () => { setCurrentNote(); saveState(); toast('已保存到浏览器本地'); render(); };
-    document.getElementById('saveLocalBtn').onclick = () => { setCurrentNote(); saveState(); toast('已保存到浏览器本地'); render(); };
-
-    document.getElementById('exportMdBtn').onclick = () => exportMarkdown();
-    document.getElementById('exportXlsxBtn').onclick = () => exportExcel();
-    document.getElementById('exportMdBtn2').onclick = () => exportMarkdown();
-    document.getElementById('exportXlsxBtn2').onclick = () => exportExcel();
-    document.getElementById('exportNoteMdBtn').onclick = () => exportMarkdown();
-    document.getElementById('exportNoteXlsxBtn').onclick = () => exportExcel();
-
-    const importInput = document.getElementById('importFile');
-    document.getElementById('importBtn').onclick = () => importInput.click();
-    document.getElementById('importBtn2').onclick = () => importInput.click();
-    importInput.onchange = () => {
-      if (importInput.files && importInput.files[0]) importData(importInput.files[0]);
-      importInput.value = '';
-    };
-
-    document.getElementById('noteInput').addEventListener('input', () => {
-      state.note = document.getElementById('noteInput').value;
-      state.records[todayKey()].note = state.note;
+    const noteInput = document.getElementById('noteInput');
+    const extraInput = document.getElementById('extraInput');
+    noteInput.addEventListener('input', () => {
+      state.note = noteInput.value;
+      getRecord(todayKey()).note = state.note;
       saveState();
       renderSummary();
     });
-    document.getElementById('extraInput').addEventListener('input', () => {
-      state.extraNote = document.getElementById('extraInput').value;
-      state.records[todayKey()].extraNote = state.extraNote;
+    extraInput.addEventListener('input', () => {
+      state.extraNote = extraInput.value;
+      getRecord(todayKey()).extraNote = state.extraNote;
       saveState();
+    });
+
+    const importInput = document.getElementById('importFile');
+    importInput.addEventListener('change', () => {
+      if (importInput.files && importInput.files[0]) importData(importInput.files[0]);
+      importInput.value = '';
     });
   }
 
@@ -829,8 +843,8 @@
     if (!state.records[todayKey()]) state.records[todayKey()] = defaultRecord();
     if (isComplete(getRecord(todayKey()))) completeTodayIfNeeded();
     saveState();
-    render();
-    bindButtons();
+    bindEvents();
+    renderAll();
   }
 
   init();
